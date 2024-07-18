@@ -70,9 +70,36 @@ app.timer('getBinfo', {
 
 function Collection(dateString, description) {
 
+    const BLACK_BIN = 'Rubbish';
+    const BLUE_BIN  = 'Recycling';
+    const FOOD_BIN  = 'Food waste';
+    const ELEC_TEXTILES = 'Batteries-small electricals-textiles';
+
+    this.collectionKey = ((dateString, description) => {
+        const ymd = dateString.split('/').reverse().join('_');
+
+        switch(description) {
+            case BLACK_BIN: 
+                return ymd + '_BLACK_BIN';
+
+            case BLUE_BIN:
+                return ymd + '_BLUE_BIN';
+
+            case FOOD_BIN:
+                return ymd + '_FOOD_BIN';
+
+            case ELEC_TEXTILES:
+                return ymd + '_ELEC_TEXTILES';
+
+            default: 
+                return null;
+        }
+    })(dateString, description);
+
+
     this.utcDate = ((dateString) => {
 
-        dmy = dateString.split('/');
+        const dmy = dateString.split('/');
 
         return new Date(Date.UTC(
             dmy[2],
@@ -82,12 +109,8 @@ function Collection(dateString, description) {
 
     })(dateString);
 
-    this.description = ((description) => {
 
-        const BLACK_BIN = 'Rubbish';
-        const BLUE_BIN  = 'Recycling';
-        const FOOD_BIN  = 'Food waste';
-        const ELEC_TEXTILES = 'Batteries-small electricals-textiles';
+    this.description = ((description) => {
 
         switch(description) {
             case BLACK_BIN: 
@@ -107,4 +130,8 @@ function Collection(dateString, description) {
         }
         
     })(description);
+}
+
+function writeCollections(collections) {
+    
 }
