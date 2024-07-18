@@ -1,11 +1,10 @@
 const { app } = require('@azure/functions');
+const { TableClient, AzureNamedKeyCredential } = require("@azure/data-tables");
 const puppeteer = require("puppeteer");
 
 app.timer('getBinfo', {
     schedule: '0 0 1 * * 1',
     handler: async function(myTimer, context) {
-
-        context.log('Hello Binfo.');
 
         const { 
             START_URL,
@@ -60,7 +59,7 @@ app.timer('getBinfo', {
             collections.push( new Collection(data[i], data[i+1]) );
         }
 
-        context.log(collections);
+        writeCollections(collections);
 
         await browser.close();
     
@@ -70,12 +69,14 @@ app.timer('getBinfo', {
 
 function Collection(dateString, description) {
 
+    this.partitionKey = 'collections';
+
     const BLACK_BIN = 'Rubbish';
     const BLUE_BIN  = 'Recycling';
     const FOOD_BIN  = 'Food waste';
     const ELEC_TEXTILES = 'Batteries-small electricals-textiles';
 
-    this.collectionKey = ((dateString, description) => {
+    this.rowKey = ((dateString, description) => {
         const ymd = dateString.split('/').reverse().join('_');
 
         switch(description) {
@@ -133,5 +134,17 @@ function Collection(dateString, description) {
 }
 
 function writeCollections(collections) {
-    
+    const {
+        AZ_ACCOUNT_NAME,
+        AZ_ACCOUNT_KEY,
+        AZ_TABLES_URL,
+        AZ_TABLE_NAME
+    } = process.env;
+
+    const creds = new AzureNamedKeyCredential(AZ_ACCOUNT_NAME, AZ_ACCOUNT_KEY);
+    const client = new TableClient(AZ_TABLES_URL, AZ_TABLE_NAME, creds);
+
+    collections.forEach(collection => {
+        client.upsertEntity(collection, "Replace");
+    });
 }
