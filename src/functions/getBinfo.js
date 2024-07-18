@@ -15,7 +15,7 @@ app.timer('getBinfo', {
             POSTCODE 
         } = process.env;
 
-        const browser = await puppeteer.launch({ headless: false });
+        const browser = await puppeteer.launch();
         const page = await browser.newPage();
 
         // Go to start page
@@ -44,9 +44,67 @@ app.timer('getBinfo', {
             page.waitForNavigation
         ]);
 
-        // TODO: Parse data
+        // Parse data
+        const container = '#scheduled-collections';
+        await page.locator(container).waitHandle();
+
+        const data = await page.$$eval(`${container} li`, data => 
+            data.filter(li => li.innerText !== '').map(li => {
+                return li.innerText;
+            })
+        );
+
+        const collections = [];
+
+        for(i = 0; i < data.length; i = i+2) {
+            collections.push( new Collection(data[i], data[i+1]) );
+        }
+
+        context.log(collections);
 
         await browser.close();
     
     }
 });
+
+
+function Collection(dateString, description) {
+
+    this.utcDate = ((dateString) => {
+
+        dmy = dateString.split('/');
+
+        return new Date(Date.UTC(
+            dmy[2],
+            dmy[1] - 1,
+            dmy[0]
+        ));
+
+    })(dateString);
+
+    this.description = ((description) => {
+
+        const BLACK_BIN = 'Rubbish';
+        const BLUE_BIN  = 'Recycling';
+        const FOOD_BIN  = 'Food waste';
+        const ELEC_TEXTILES = 'Batteries-small electricals-textiles';
+
+        switch(description) {
+            case BLACK_BIN: 
+                return '🗑️ Black Bin';
+
+            case BLUE_BIN:
+                return '♻️ Recycling Bin';
+
+            case FOOD_BIN:
+                return '🥗 Food Bin';
+
+            case ELEC_TEXTILES:
+                return '🪫 Electrical & Textiles';
+
+            default: 
+                return null;
+        }
+        
+    })(description);
+}
