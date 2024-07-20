@@ -32,7 +32,6 @@ jobs:
           npm install
           npm run build --if-present
           npm run test --if-present
-          npx puppeteer browsers install chrome
           popd
 
       - name: Zip artifact for deployment
