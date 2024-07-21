@@ -29,7 +29,6 @@ jobs:
         shell: bash
         run: |
           pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-          npm install puppeteer
           npm install
           npm run build --if-present
           npm run test --if-present
@@ -76,4 +75,6 @@ jobs:
           app-name: 'get-bin-day-woking'
           slot-name: 'Production'
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          scm-do-build-during-deployment: true
+          enable-oryx-build: true
           
