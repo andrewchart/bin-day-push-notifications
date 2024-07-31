@@ -9,8 +9,7 @@
   "dependencies": {
     "@azure/data-tables": "^13.2.2",
     "@azure/functions": "^4.0.0",
-    "puppeteer": "^22.13.1",
-    "puppeteer-core": "^22.15.0"
+    "puppeteer": "^22.15.0"
   },
   "main": "src/{index.js,functions/*.js}"
 }
