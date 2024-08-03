@@ -137,12 +137,12 @@ function writeCollections(collections) {
     const {
         AZ_ACCOUNT_NAME,
         AZ_ACCOUNT_KEY,
-        AZ_TABLES_URL,
+        AZ_STORAGE_URL,
         AZ_TABLE_NAME
     } = process.env;
 
     const creds = new AzureNamedKeyCredential(AZ_ACCOUNT_NAME, AZ_ACCOUNT_KEY);
-    const client = new TableClient(AZ_TABLES_URL, AZ_TABLE_NAME, creds);
+    const client = new TableClient(AZ_STORAGE_URL, AZ_TABLE_NAME, creds);
 
     collections.forEach(collection => {
         client.upsertEntity(collection, "Replace");
