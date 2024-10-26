@@ -77,4 +77,6 @@ jobs:
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
           scm-do-build-during-deployment: true
           enable-oryx-build: true
-          
+
+      - name: Deploy static site
+        run: curl -X POST https://get-bin-day-woking.azurewebsites.net/api/deploystaticcontent
