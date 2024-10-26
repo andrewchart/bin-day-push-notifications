@@ -1,2 +1,0 @@
-[config]
-command = curl -X POST https://get-bin-day-woking.azurewebsites.net/api/deploystaticcontent
