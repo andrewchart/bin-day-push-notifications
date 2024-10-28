@@ -79,4 +79,4 @@ jobs:
           enable-oryx-build: true
 
       - name: Deploy static site
-        run: curl -X POST ${{ env.AZ_HTTP_FUNC_BASE_URL }}/api/deploystaticcontent
+        run: curl -X POST https://get-bin-day-woking.azurewebsites.net/api/deploystaticcontent
