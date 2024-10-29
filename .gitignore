@@ -100,4 +100,4 @@ __azurite_db*__.json
 
 # Custom
 cache/
-src/static/env.js
+src/functions/static/env.js

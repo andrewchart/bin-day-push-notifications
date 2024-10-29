@@ -78,6 +78,9 @@ function subscribe(event) {
 
         navigator.serviceWorker.ready.then(async (registration) => {
 
+            //Spinner state
+            subscribeBtn.disabled = true;
+
             //Fetch Vapid Key
             let url = `${AZ_HTTP_FUNC_BASE_URL}/api/getvapidkey`;
             const vapidServerKey = await fetch(url).then(response => response.text());
@@ -97,6 +100,7 @@ function subscribe(event) {
                     setMessage('ok', `Successfully subscribed to push notifications.`);
                     loadCurrentSubscriptionAddressDetails();
                     subscribeForm.classList.add('hidden');
+                    subscribeBtn.removeAttribute('disabled');
                     unsubscribeForm.classList.remove('hidden');
 
                 } else {
