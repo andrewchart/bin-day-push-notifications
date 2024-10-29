@@ -1,4 +1,6 @@
 const { app } = require('@azure/functions');
+const fs = require('fs');
+const path = require('path');
 const { BlobServiceClient } = require("@azure/storage-blob");
 const { DefaultAzureCredential } = require("@azure/identity");
 
@@ -21,21 +23,43 @@ app.http('deployStaticContent', {
 
         const container = blobService.getContainerClient(AZ_BLOB_STORAGE_NAME);
 
-        const blob = container.getBlockBlobClient('index.html');
-        
-        try {
-            await blob.uploadFile(
-                __dirname + '/static/index.html',
-                {
-                    blobHTTPHeaders: {
-                        blobContentType: 'text/html'
-                    }
+        // Loop through all files in the static directory and upload them
+        fs.readdir(__dirname + '/static', (err, files) => {
+            files.forEach(async filename => {
+
+                let mimeType;
+
+                switch(path.extname(filename)) {
+                    case '.html':
+                        mimeType = 'text/html';
+                        break;
+
+                    case '.js':
+                        mimeType = 'text/javascript';
+                        break;
+
+                    default:
+                        mimeType = 'text/html';
                 }
-                );
-        } catch(err) {
-            context.error("Error deploying push subscription website: ", err);
-        }
-        
+
+                try {
+                    
+                    let blob = container.getBlockBlobClient(filename);
+
+                    await blob.uploadFile(
+                        __dirname + '/static/' + filename,
+                        {
+                            blobHTTPHeaders: {
+                                blobContentType: mimeType
+                            }
+                        }
+                    );
+                } catch(err) {
+                    context.error("Error deploying push subscription website: ", err);
+                }
+            });
+        });
+
         return { body: 0 };
 
     }    
