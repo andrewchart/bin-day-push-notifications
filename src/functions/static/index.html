@@ -73,9 +73,23 @@
                 background-color: rgb(0, 123, 57);
             }
 
+            /* Show user hint to install to home screen on iOS */
+            body.ios #addToHomeScreenMsg {
+                display: block;
+            }
 
-            #addToHomeScreenMsg {
+            body.ios form {
                 display: none;
+            }
+
+            @media all and (display-mode: standalone) {
+                body.ios #addToHomeScreenMsg {
+                    display: none;
+                }
+
+                body.ios form {
+                    display: block;
+                }
             }
 
         </style>
@@ -86,7 +100,10 @@
 
         <p id="userFeedbackMsg" class="message hidden"></p>
 
-        <p id="addToHomeScreenMsg" class="message warning">Test</p>
+        <p id="addToHomeScreenMsg" class="message warning">
+            For push notifications to work you first need to add this app to your home screen and
+            open it from there. Once done you'll be able to subscribe to the notifications.
+        </p>
 
         <form id="subscribeForm" class="hidden">
 
