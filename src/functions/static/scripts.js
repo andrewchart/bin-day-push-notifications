@@ -8,8 +8,8 @@ const unsubscribeForm = document.getElementById('unsubscribeForm');
 subscribeForm.onsubmit = subscribe;
 unsubscribeForm.onsubmit = unsubscribe;
 
-/* UI Message */
-const message = document.getElementById('message');
+/* UI Generic Feedback Message */
+const userFeedbackMsg = document.getElementById('userFeedbackMsg');
 
 function setMessage(level, msg) {
 
@@ -30,39 +30,43 @@ function setMessage(level, msg) {
             return;
     }
 
-    message.innerHTML = msg;
-    message.classList.remove('error','warning','ok');
-    message.classList.add(msgClass);
-    message.classList.remove('hidden');
+    userFeedbackMsg.innerHTML = msg;
+    userFeedbackMsg.classList.remove('error','warning','ok');
+    userFeedbackMsg.classList.add(msgClass);
+    userFeedbackMsg.classList.remove('hidden');
 }
 
 function hideMessage() {
-    message.classList.add('hidden');
+    userFeedbackMsg.classList.add('hidden');
 }
 
 
 /* ServiceWorker & Push Subscription Handling */
-navigator.serviceWorker.register('sw.js');
+if("serviceWorker" in navigator) {
+    navigator.serviceWorker.register('sw.js');
 
 
-navigator.serviceWorker.ready.then((registration) => {
-
-    subscribeBtn.removeAttribute('disabled');
-
-    return registration.pushManager.getSubscription();
-
-}).then((subscription) => {
-
-    if(subscription) {
-        loadCurrentSubscriptionAddressDetails();
-        unsubscribeForm.classList.remove('hidden');
-    } else {
+    navigator.serviceWorker.ready.then((registration) => {
+    
+        subscribeBtn.removeAttribute('disabled');
+    
+        return registration.pushManager.getSubscription();
+    
+    }).then((subscription) => {
+    
+        if(subscription) {
+            loadCurrentSubscriptionAddressDetails();
+            unsubscribeForm.classList.remove('hidden');
+        } else {
+            subscribeForm.classList.remove('hidden');
+        }
+    
+    }).catch((error) =>{
         subscribeForm.classList.remove('hidden');
-    }
-
-}).catch((error) =>{
-    subscribeForm.classList.remove('hidden');
-});
+    });    
+} else {
+    setMessage('error', `Your browser does not support push notifications. Please try another browser`);
+}
 
 
 function subscribe(event) {
@@ -157,3 +161,49 @@ function unsubscribe(event) {
     });
 
 }
+
+/* iOS user hint messaging */
+function iOS() {
+    return [
+      'iPad Simulator',
+      'iPhone Simulator',
+      'iPod Simulator',
+      'iPad',
+      'iPhone',
+      'iPod'
+    ].includes(navigator.platform)
+    // iPad on iOS 13 detection
+    || (navigator.userAgent.includes("Mac") && "ontouchend" in document)
+}
+
+if(iOS()) {
+    document.body.classList.add('ios');
+}
+
+/* PWA Add to Home Screen Prompt */
+let deferredPrompt; 
+ 
+window.addEventListener('beforeinstallprompt', (e) => { 
+    // Prevent the mini-info bar from appearing on mobile 
+    e.preventDefault(); 
+    // Stash the event so it can be triggered later 
+    deferredPrompt = e; 
+    // Update UI to notify the user they can add to home screen 
+    document.getElementById('addToHomeScreenMsg').style.display = 'block'; 
+}); 
+
+document.getElementById('addToHomeScreenMsg').addEventListener('click', () => { 
+    // Hide the button 
+    document.getElementById('addToHomeScreenMsg').style.display = 'none'; 
+    // Show the install prompt 
+    deferredPrompt.prompt(); 
+    // Wait for the user to respond to the prompt 
+    deferredPrompt.userChoice.then((choiceResult) => { 
+        if (choiceResult.outcome === 'accepted') { 
+            console.log('User accepted the A2HS prompt'); 
+        } else { 
+            console.log('User dismissed the A2HS prompt'); 
+        } 
+        deferredPrompt = null; 
+    }); 
+}); 

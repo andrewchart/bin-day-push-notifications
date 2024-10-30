@@ -53,7 +53,7 @@
                 font-weight: normal;    
             }
 
-            #message {
+            .message {
                 font-size: 0.8em;
                 font-weight: bold;
                 padding: 1em 0.7em;
@@ -61,16 +61,21 @@
                 margin-bottom: 2.4em;
             }
 
-            #message.error {
+            .message.error {
                 background-color: #c00;
             }
 
-            #message.warning {
+            .message.warning {
                 background-color: rgb(230, 188, 0);
             }
 
-            #message.ok {
+            .message.ok {
                 background-color: rgb(0, 123, 57);
+            }
+
+
+            #addToHomeScreenMsg {
+                display: none;
             }
 
         </style>
@@ -79,7 +84,9 @@
     <body>
         <h1>Subscribe to Bin Day Alerts: Woking</h1>
 
-        <p id="message" class="hidden"></p>
+        <p id="userFeedbackMsg" class="message hidden"></p>
+
+        <p id="addToHomeScreenMsg" class="message warning">Test</p>
 
         <form id="subscribeForm" class="hidden">
 
