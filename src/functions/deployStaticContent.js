@@ -47,6 +47,10 @@ app.http('deployStaticContent', {
                         mimeType = 'application/json';
                         break;
 
+                    case '.png':
+                        mimeType = 'image/png';
+                        break;
+
                     default:
                         mimeType = 'text/html';
                 }
