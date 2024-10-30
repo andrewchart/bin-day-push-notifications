@@ -82,7 +82,7 @@
                 display: block;
             }
 
-            body.ios form {
+            body.ios #formArea {
                 display: none;
             }
 
@@ -91,7 +91,7 @@
                     display: none;
                 }
 
-                body.ios form {
+                body.ios #formArea {
                     display: block;
                 }
             }
@@ -109,29 +109,31 @@
             open it from there. Once done you'll be able to subscribe to the notifications.
         </p>
 
-        <form id="subscribeForm" class="hidden">
+        <div id="formArea">
+            <form id="subscribeForm" class="hidden">
 
-            <label for="propertyNameOrNumber">Property Name or Number</label>
-            <input name="property_name_or_number" id="propertyNameOrNumber" type="text" />
+                <label for="propertyNameOrNumber">Property Name or Number</label>
+                <input name="property_name_or_number" id="propertyNameOrNumber" type="text" />
 
-            <label for="street">Street</label>
-            <input name="street" id="street" type="text" />
+                <label for="street">Street</label>
+                <input name="street" id="street" type="text" />
 
-            <label for="postcode">Postcode</label>
-            <input name="postcode" id="postcode" type="text" />
+                <label for="postcode">Postcode</label>
+                <input name="postcode" id="postcode" type="text" />
 
-            <input id="subscribe" type="submit" value="Subscribe" disabled />
-        </form>
+                <input id="subscribe" type="submit" value="Subscribe" disabled />
+            </form>
 
-        <form id="unsubscribeForm" class="hidden">
-            <p>You are currently receiving notifications for this address</p>
+            <form id="unsubscribeForm" class="hidden">
+                <p>You are currently receiving notifications for this address</p>
 
-            <div>Property Name or Number: <span id="currentSubPropertyNameOrNumber"></span></div>
-            <div>Street: <span id="currentSubStreet"></span></div>
-            <div>Postcode: <span id="currentSubPostcode"></span></div>
-    
-            <input id="unsubscribe" type="submit" value="Unsubscribe" />
-        </form>
+                <div>Property Name or Number: <span id="currentSubPropertyNameOrNumber"></span></div>
+                <div>Street: <span id="currentSubStreet"></span></div>
+                <div>Postcode: <span id="currentSubPostcode"></span></div>
+        
+                <input id="unsubscribe" type="submit" value="Unsubscribe" />
+            </form>
+        </div>
 
         <script src="env.js" type="text/javascript"></script>
         <script src="scripts.js" type="text/javascript"></script>
