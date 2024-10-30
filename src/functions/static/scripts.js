@@ -60,6 +60,8 @@ navigator.serviceWorker.ready.then((registration) => {
         subscribeForm.classList.remove('hidden');
     }
 
+}).catch((error) =>{
+    subscribeForm.classList.remove('hidden');
 });
 
 
