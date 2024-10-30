@@ -43,6 +43,10 @@ app.http('deployStaticContent', {
                         mimeType = 'text/javascript';
                         break;
 
+                    case '.json':
+                        mimeType = 'application/json';
+                        break;
+
                     default:
                         mimeType = 'text/html';
                 }
