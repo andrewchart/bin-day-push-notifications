@@ -97,7 +97,9 @@ function subscribe(event) {
             }).then((subscription) => {
 
                 if(subscription) {
-                    console.log(subscription);    
+                    console.log(subscription.endpoint); 
+                    console.log("Auth: ", arrayBufferToString(subscription.getKey("auth")));
+                    console.log("p256dh: ", arrayBufferToString(subscription.getKey("p256dh")));   
 
                     // TODO: send to server
                     
@@ -178,4 +180,15 @@ function iOS() {
 
 if(iOS()) {
     document.body.classList.add('ios');
+}
+
+/* Utility to convert push keys to strings */
+function arrayBufferToString(buffer) {
+    var binary = '';
+    var bytes = new Uint8Array(buffer);
+    var len = bytes.byteLength;
+    for (var i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
 }
