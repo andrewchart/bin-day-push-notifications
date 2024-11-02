@@ -86,6 +86,7 @@ function subscribe(event) {
 
             //Spinner state
             subscribeBtn.disabled = true;
+            subscribeBtn.value = "Please wait...";
 
             //Fetch Vapid Key
             let url = `${AZ_HTTP_FUNC_BASE_URL}/api/getvapidkey`;
@@ -109,6 +110,7 @@ function subscribe(event) {
                     loadCurrentSubscriptionAddressDetails();
                     subscribeForm.classList.add('hidden');
                     subscribeBtn.removeAttribute('disabled');
+                    subscribeBtn.value = "Subscribe";
                     unsubscribeForm.classList.remove('hidden');
 
                 } else {
