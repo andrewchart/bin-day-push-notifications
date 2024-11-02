@@ -1,5 +1,9 @@
 self.addEventListener('push', (event) => {
-    event.waitUntil(self.registration.showNotification('Bin Collection Update', {
-        body: 'Your bins are being collected'
+
+    let msg = event.data.json();
+
+    event.waitUntil(self.registration.showNotification(msg.title, {
+        body: msg.text,
+        icon: '192.png'
     }));
 });
