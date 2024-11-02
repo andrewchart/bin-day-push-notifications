@@ -13,15 +13,24 @@ app.timer('sendNotifications', {
 
         const client = new NotificationHubsClient(AZ_NOTIFICATION_HUB_CONNECTION_STRING, AZ_NOTIFICATION_HUB_NAME);
 
+        let collections = [
+            '♻️ Recycling Bin',
+            '🪫 Electrical & Textiles',
+            '🥗 Food Bin'
+        ];
+
         const notification = createBrowserNotification({
-            body: 'Hello!' 
+            body: { 
+                title: "Collections tomorrow (3rd Nov)",
+                text: collections.join('\n')
+            } 
         });
         
         let result = await client.sendNotification(notification, {
             deviceHandle: {
-                endpoint: "https://fcm.googleapis.com/fcm/send/cC2eDuHLJWc:APA91bHa0Sqjv1YZ0yfPKV9jHhgqcnGtJD0t3o_q8yEK3XzTY2R6niyxbB31HuqQ7Io4qkGE01Rc0063lmn0e160YtNTCv58LBu3D_ej8WldE5EvUH8M--BxBAvUvvKYODm8MyQGw8Sv", 
-                auth: "G2plJyrPO41w2EQUHe4FwA==",
-                p256dh: "BB7DV1QgL341mSgM8bAuCpjQ3vDRmgFckbSIc6k+4G4fmxcSGjmqYasUWP5YuAnOTpp5pjk9tjtUfscsFIkqgpg="
+                endpoint: "https://web.push.apple.com/QI3rZCJRINq2IG7gCW_qk9CIpQ0EVyO3QC0zU6IYcGX8Qnd8-ivRZY5dLUn78bnguLQk9oPobSbkVW8K95dnxWOyOa0G-qnwC0_fThVqIDrDPTnAVgihRJ3yG31hunte_CgNrHRQh6IcLSxcusDXos98JHK6DI37tmfBQuFgQ9Y", 
+                auth: "C6SO4qZC8nP7Lpvuk44TIg==",
+                p256dh: "BD0sRqmgxVOHPUx0ablaNF2bA1CeqCOjZNWbe4cC/ibnRUU2oA/BXLFOCbmeZbPbKcJKoTLgzxiyX7mLox2Cq3E="
             }
         });
 
