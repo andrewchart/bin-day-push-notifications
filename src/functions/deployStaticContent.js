@@ -36,6 +36,7 @@ app.http('deployStaticContent', {
 
                 switch(path.extname(filename)) {
                     case '.html':
+                    case '.css':
                         mimeType = 'text/html';
                         break;
 
