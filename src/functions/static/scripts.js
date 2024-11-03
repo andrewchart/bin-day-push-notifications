@@ -80,8 +80,17 @@ function subscribe(event) {
                 again.`);
         }
 
+        // Validate form
         hideMessage();
+    
+        let validationErrors = validateSubscribeForm().errors;
+    
+        if(validationErrors.length > 0) {
+            setMessage('error', '<ul><li>' + validationErrors.join('</li><li>') + '</li></ul>');
+            return false;
+        }
 
+        // Create push subscription
         navigator.serviceWorker.ready.then(async (registration) => {
 
             //Spinner state
@@ -127,6 +136,25 @@ function loadCurrentSubscriptionAddressDetails() {
     document.getElementById('currentSubPropertyNameOrNumber').innerText = '1';
     document.getElementById('currentSubStreet').innerText = 'High Street';
     document.getElementById('currentSubPostcode').innerText = 'GU1 1AB';
+}
+
+function validateSubscribeForm() {
+
+    let errors = [];
+
+    if(document.getElementById('propertyNameOrNumber').value.length === 0) {
+        errors.push('Property Name or Number should be populated');
+    }
+
+    if(document.getElementById('street').value.length === 0) {
+        errors.push('Street should be populated');
+    }
+
+    if(document.getElementById('postcode').value.length === 0) {
+        errors.push('Postcode should be populated');
+    }
+
+    return { errors }
 }
 
 
