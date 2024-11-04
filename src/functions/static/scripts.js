@@ -55,7 +55,7 @@ if("serviceWorker" in navigator) {
     }).then((subscription) => {
     
         if(subscription) {
-            loadCurrentSubscriptionAddressDetails();
+            loadCurrentSubscriptionDetails();
             unsubscribeForm.classList.remove('hidden');
         } else {
             subscribeForm.classList.remove('hidden');
@@ -73,11 +73,11 @@ function subscribe(event) {
 
     event.preventDefault();
 
-    Notification.requestPermission().then((permissionStatus) => {
+    return Notification.requestPermission().then((permissionStatus) => {
+
         if(permissionStatus !== 'granted') {
-            return setMessage('error', `You have disabled push notifications for this website in your 
-                browser. Please grant permission to subscribe to push notifications then try 
-                again.`);
+            throw new Error(`You have disabled push notifications for this website in your browser.
+                Please grant permission to subscribe to push notifications then try again.`);
         }
 
         // Validate form
@@ -86,12 +86,11 @@ function subscribe(event) {
         let validationErrors = validateSubscribeForm().errors;
     
         if(validationErrors.length > 0) {
-            setMessage('error', '<ul><li>' + validationErrors.join('</li><li>') + '</li></ul>');
-            return false;
+            throw new Error('<ul><li>' + validationErrors.join('</li><li>') + '</li></ul>');
         }
 
         // Create push subscription
-        navigator.serviceWorker.ready.then(async (registration) => {
+        return navigator.serviceWorker.ready.then(async (registration) => {
 
             //Spinner state
             subscribeBtn.disabled = true;
@@ -101,42 +100,62 @@ function subscribe(event) {
             let url = `${AZ_HTTP_FUNC_BASE_URL}/api/getvapidkey`;
             const vapidServerKey = await fetch(url).then(response => response.text());
 
-            registration.pushManager.subscribe({
+            // Establish subscription in browser and server
+            return registration.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey: vapidServerKey
             }).then((subscription) => {
 
-                if(subscription) {
-                    console.log(subscription.endpoint); 
-                    console.log("Auth: ", arrayBufferToString(subscription.getKey("auth")));
-                    console.log("p256dh: ", arrayBufferToString(subscription.getKey("p256dh")));   
-
-                    // TODO: send to server
+                if(!subscription) {
+                    throw new Error(`Failed to subscribe to push notifications. Browser subscription
+                        not found. Please try again.`);
+                }
                     
-                    // TODO: store form details locally 
+                let subscriptionDetails = {
+                    auth: arrayBufferToString(subscription.getKey("auth")),
+                    p256dh: arrayBufferToString(subscription.getKey("p256dh")),
+                    endpoint: subscription.endpoint,
+                    propertyNameOrNumber: document.getElementById('propertyNameOrNumber').value, 
+                    street: document.getElementById('street').value, 
+                    postcode: document.getElementById('postcode').value
+                }
+                
+                return fetch(`${AZ_HTTP_FUNC_BASE_URL}/api/createSubscription`, { 
+                    method: 'post',
+                    body: JSON.stringify(subscriptionDetails)
+                }).then((response) => {
+
+                    if(response.status !== 200) {
+                        deleteBrowserSubscription();
+                        throw new Error(`Failed to subscribe to push notifications. Server failed to
+                            record subscription. Please try again.`);
+                    }
 
                     setMessage('ok', `Successfully subscribed to push notifications.`);
-                    loadCurrentSubscriptionAddressDetails();
+                    loadCurrentSubscriptionDetails();
                     subscribeForm.classList.add('hidden');
                     subscribeBtn.removeAttribute('disabled');
                     subscribeBtn.value = "Subscribe";
                     unsubscribeForm.classList.remove('hidden');
+                    return true;
 
-                } else {
-                    setMessage('error', `Failed to subscribe to push notifications. Please try again.`);
-                }
+                });
 
             }); 
+
         });
+    }).catch(error => {
+        setMessage('error', error.message);
     });
 }
 
 
-function loadCurrentSubscriptionAddressDetails() {
+function loadCurrentSubscriptionDetails() {
     document.getElementById('currentSubPropertyNameOrNumber').innerText = '1';
     document.getElementById('currentSubStreet').innerText = 'High Street';
     document.getElementById('currentSubPostcode').innerText = 'GU1 1AB';
 }
+
 
 function validateSubscribeForm() {
 
@@ -158,15 +177,14 @@ function validateSubscribeForm() {
 }
 
 
-function unsubscribe(event) {
+function deleteServerSubscription() {
+    return true; //TODO: 
+}
 
-    event.preventDefault();
 
-    if(!confirm("You will stop receiving push notifications for this address. Are you sure?")) {
-        return false;
-    }
+function deleteBrowserSubscription() {
 
-    navigator.serviceWorker.ready.then((registration) => {
+    return navigator.serviceWorker.ready.then((registration) => {
         return registration.pushManager.getSubscription();
     }).then((subscription) => {
 
@@ -176,23 +194,58 @@ function unsubscribe(event) {
             throw new Error('No push subscription to unsubscribe from.');
         }
 
-        // TODO: remove from database
-
         subscription.unsubscribe().then((success) => {
-            if(success) {
-                setMessage('ok', `Successfully unsubscribed from push notifications.`);
-                unsubscribeForm.classList.add('hidden');
-                subscribeForm.classList.remove('hidden');
-            } else {
-                throw new Error('Failed to unsubscribe from push notifications. Please try again.');
+            if(!success) {
+                throw new Error(`Failed to unsubscribe from push notifications. Browser error. 
+                    Please try again.`);
             }
+
+            unsubscribeForm.classList.add('hidden');
+            subscribeForm.classList.remove('hidden');
+            subscribeBtn.removeAttribute('disabled');
+            subscribeBtn.value = "Subscribe";
+
+            return true;
         });
 
     }).catch((error) => {
-        setMessage('error', error);
+        setMessage('error', error.message);
+        return false;
     });
 
 }
+
+
+function unsubscribe(event) {
+
+    event.preventDefault();
+
+    if(!confirm("You will stop receiving push notifications for this address. Are you sure?")) {
+        return false;
+    }
+
+    let deletedFromServer = deleteServerSubscription();
+
+    if(!deletedFromServer) {
+        setMessage('error', `Failed to unsubscribe from push notifications. Server error. Please
+            try again.`);
+        return false;
+    }
+
+    let deletedFromBrowser = deleteBrowserSubscription();
+
+    if(!deletedFromBrowser) {
+        setMessage('error', `Failed to unsubscribe from push notifications. Browser error. Please
+            try again.`);
+        return false;
+    }
+
+    setMessage('ok', `Successfully unsubscribed from push notifications.`);
+    subscribeForm.reset();
+    return true;
+
+}
+
 
 /* iOS user hint messaging */
 function iOS() {
