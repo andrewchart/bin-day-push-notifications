@@ -151,9 +151,36 @@ function subscribe(event) {
 
 
 function loadCurrentSubscriptionDetails() {
-    document.getElementById('currentSubPropertyNameOrNumber').innerText = '1';
-    document.getElementById('currentSubStreet').innerText = 'High Street';
-    document.getElementById('currentSubPostcode').innerText = 'GU1 1AB';
+
+    return navigator.serviceWorker.ready.then((registration) => {
+        return registration.pushManager.getSubscription();
+    }).then((subscription) => {
+
+        if(!subscription) throw new Error(`Unable to find push subscription`);
+
+        let authKey = arrayBufferToString(subscription.getKey('auth'));
+        let url = `${AZ_HTTP_FUNC_BASE_URL}/api/getSubscription/${authKey}`;
+
+        return fetch(url).then((response) => {
+            if(response.status !== 200) throw new Error(`Failed to retrieve subscription details`);
+
+            return response.json();
+        }).then((subscriptionDetails) => {
+            const { propertyNameOrNumber, street, postcode} = subscriptionDetails;
+
+            document.getElementById('currentSubPropertyNameOrNumber').innerText = propertyNameOrNumber;
+            document.getElementById('currentSubStreet').innerText = street;
+            document.getElementById('currentSubPostcode').innerText = postcode;
+
+            return true;
+        });
+
+    }).catch((error) => {
+        setMessage('error', error.message);
+        return false;
+    });
+
+    
 }
 
 
