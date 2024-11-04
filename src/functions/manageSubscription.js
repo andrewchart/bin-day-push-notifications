@@ -8,8 +8,9 @@ app.http('createSubscription', {
     route: 'createSubscription',
     handler: async (request, context) => {
 
-        let responseData = {
-            status: 'Created'
+        let response = {
+            body: JSON.stringify({ message: 'OK' }),
+            status: 201
         }
 
         const {
@@ -29,28 +30,26 @@ app.http('createSubscription', {
         } = request.params;
 
         const partitionKey = 'subscriptions';
-        const rowKey = auth;
 
         const creds = new AzureNamedKeyCredential(AZ_ACCOUNT_NAME, AZ_ACCOUNT_KEY);
         const client = new TableClient(AZ_TABLE_STORAGE_URL, AZ_SUBSCRIPTIONS_TABLE_NAME, creds);
 
-        try {
-
-            client.upsertEntity({ 
-                partitionKey,
-                rowKey, //auth
-                p256dh,
-                endpoint,
-                propertyNameOrNumber, 
-                street, 
-                postcode
-            }, "Replace");
-
-        } catch(error) {
-            responseData.status = 'Error';
-        }
-
-        return { body: JSON.stringify(responseData) };
+        await client.upsertEntity({ 
+            partitionKey,
+            rowKey: encodeURIComponent(auth), //use auth as a unique key, but Azure require urlencoding
+            auth,
+            p256dh,
+            endpoint,
+            propertyNameOrNumber, 
+            street, 
+            postcode
+        }, "Replace").catch((error) => {
+            response.body = JSON.stringify({ message: 'Failed' });
+            response.status = 500;
+        });
+        
+        return response;
+        
     }
 });
 
@@ -63,6 +62,11 @@ app.http('getSubscription', {
 
         const { authKey } = request.params;
 
+        let response = {
+            body: null,
+            status: null
+        }
+
         const {
             AZ_ACCOUNT_NAME,
             AZ_ACCOUNT_KEY,
@@ -72,13 +76,21 @@ app.http('getSubscription', {
 
         const creds = new AzureNamedKeyCredential(AZ_ACCOUNT_NAME, AZ_ACCOUNT_KEY);
         const client = new TableClient(AZ_TABLE_STORAGE_URL, AZ_SUBSCRIPTIONS_TABLE_NAME, creds);
+        
+        // erm... certain characters including "/" are url encoded in request params above. Without
+        // the inner decode, you get double encoding and the query fails. 
+        const query = encodeURIComponent(decodeURIComponent(authKey));
 
-        try {
-            let result = await client.getEntity("subscriptions", authKey);
-            return { body: JSON.stringify(result) };
-        } catch(error) {
-            return { body: JSON.stringify({}) };
-        }
+        await client.getEntity("subscriptions", query).then((result) => {
+            response.status = 200;
+            response.body = JSON.stringify(result);
+        }).catch((error) => {
+            console.log(error.message);
+            response.status = error.statusCode;
+            response.body = JSON.stringify({ message: 'Failed' });
+        });
+
+        return response;
 
     }
 });

@@ -10,6 +10,7 @@ unsubscribeForm.onsubmit = unsubscribe;
 
 const userFeedbackMsg = document.getElementById('userFeedbackMsg');
 
+
 /* Runtime function */
 (function main() {
 
@@ -104,7 +105,7 @@ function subscribe(event) {
                     body: JSON.stringify(subscriptionDetails)
                 }).then((response) => {
 
-                    if(response.status !== 200) {
+                    if(response.status !== 201) {
                         throw new Error(`Failed to subscribe to push notifications. Server failed to
                             record subscription. Please try again.`);
                     }
@@ -177,7 +178,7 @@ function loadCurrentSubscriptionDetails(populateFrom = 'server') {
     
     // Otherwise fetch the subscription details from the server
     else {
-        let authKey = arrayBufferToString(subscription.getKey('auth'));
+        let authKey = encodeURIComponent(arrayBufferToString(subscription.getKey('auth')));
         let url = `${AZ_HTTP_FUNC_BASE_URL}/api/getSubscription/${authKey}`;
 
         return fetch(url).then((response) => {
