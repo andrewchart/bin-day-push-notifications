@@ -8,70 +8,44 @@ const unsubscribeForm = document.getElementById('unsubscribeForm');
 subscribeForm.onsubmit = subscribe;
 unsubscribeForm.onsubmit = unsubscribe;
 
-/* UI Generic Feedback Message */
 const userFeedbackMsg = document.getElementById('userFeedbackMsg');
 
-function setMessage(level, msg) {
+/* Runtime function */
+(function main() {
 
-    var msgClass;
-
-    switch(level) {
-        case 'error': 
-            msgClass = 'error';
-            break;
-        case 'warning':
-            msgClass = 'warning';
-            break;
-        case 'ok':
-            msgClass = 'ok';
-            break;
-        default: 
-            console.error('Invalid message class');
-            return;
+    if("serviceWorker" in navigator) {
+        navigator.serviceWorker.register('sw.js');
+    
+        navigator.serviceWorker.ready.then((registration) => {
+        
+            resetSubscribeButton();
+        
+            return registration.pushManager.getSubscription();
+        
+        }).then((subscription) => {
+        
+            if(subscription) {
+                // Attach to window so we can reference this later e.g. for unsubscribing
+                window.subscription = subscription;
+    
+                loadCurrentSubscriptionDetails('server');
+    
+                unsubscribeForm.classList.remove('hidden');
+            } else {
+                subscribeForm.classList.remove('hidden');
+            }
+        
+        }).catch((error) =>{
+            subscribeForm.classList.remove('hidden');
+        });    
+    } else {
+        setMessage('error', `Your browser does not support push notifications. Please try another browser.`);
     }
-
-    userFeedbackMsg.innerHTML = msg;
-    userFeedbackMsg.classList.remove('error','warning','ok');
-    userFeedbackMsg.classList.add(msgClass);
-    userFeedbackMsg.classList.remove('hidden');
-}
-
-function hideMessage() {
-    userFeedbackMsg.classList.add('hidden');
-}
+    
+})();
 
 
 /* ServiceWorker & Push Subscription Handling */
-if("serviceWorker" in navigator) {
-    navigator.serviceWorker.register('sw.js');
-
-    navigator.serviceWorker.ready.then((registration) => {
-    
-        resetSubscribeButton();
-    
-        return registration.pushManager.getSubscription();
-    
-    }).then((subscription) => {
-    
-        if(subscription) {
-            // Attach to window so we can reference this later e.g. for unsubscribing
-            window.subscription = subscription;
-
-            loadCurrentSubscriptionDetails('server');
-
-            unsubscribeForm.classList.remove('hidden');
-        } else {
-            subscribeForm.classList.remove('hidden');
-        }
-    
-    }).catch((error) =>{
-        subscribeForm.classList.remove('hidden');
-    });    
-} else {
-    setMessage('error', `Your browser does not support push notifications. Please try another browser.`);
-}
-
-
 function subscribe(event) {
 
     event.preventDefault();
@@ -153,8 +127,8 @@ function subscribe(event) {
         });
     }).catch(error => {
         setMessage('error', error.message);
-        deleteBrowserSubscription();
         resetSubscribeButton();
+        if("subscription" in window) deleteBrowserSubscription();
         return false;
     });
 }
@@ -303,6 +277,37 @@ function unsubscribe(event) {
 }
 
 
+/* Utils: UI Generic Feedback Message */
+function setMessage(level, msg) {
+
+    var msgClass;
+
+    switch(level) {
+        case 'error': 
+            msgClass = 'error';
+            break;
+        case 'warning':
+            msgClass = 'warning';
+            break;
+        case 'ok':
+            msgClass = 'ok';
+            break;
+        default: 
+            console.error('Invalid message class');
+            return;
+    }
+
+    userFeedbackMsg.innerHTML = msg;
+    userFeedbackMsg.classList.remove('error','warning','ok');
+    userFeedbackMsg.classList.add(msgClass);
+    userFeedbackMsg.classList.remove('hidden');
+}
+
+function hideMessage() {
+    userFeedbackMsg.classList.add('hidden');
+}
+
+
 /* Utils: iOS user hint messaging */
 function iOS() {
     return [
@@ -321,7 +326,8 @@ if(iOS()) {
     document.body.classList.add('ios');
 }
 
-/* Utils: Convery PushSubscription keys to strings */
+
+/* Utils: Convert PushSubscription keys to strings */
 function arrayBufferToString(buffer) {
     var binary = '';
     var bytes = new Uint8Array(buffer);
