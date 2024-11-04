@@ -45,17 +45,20 @@ function hideMessage() {
 if("serviceWorker" in navigator) {
     navigator.serviceWorker.register('sw.js');
 
-
     navigator.serviceWorker.ready.then((registration) => {
     
-        subscribeBtn.removeAttribute('disabled');
+        resetSubscribeButton();
     
         return registration.pushManager.getSubscription();
     
     }).then((subscription) => {
     
         if(subscription) {
-            loadCurrentSubscriptionDetails();
+            // Attach to window so we can reference this later e.g. for unsubscribing
+            window.subscription = subscription;
+
+            loadCurrentSubscriptionDetails('server');
+
             unsubscribeForm.classList.remove('hidden');
         } else {
             subscribeForm.classList.remove('hidden');
@@ -110,6 +113,8 @@ function subscribe(event) {
                     throw new Error(`Failed to subscribe to push notifications. Browser subscription
                         not found. Please try again.`);
                 }
+
+                window.subscription = subscription;
                     
                 let subscriptionDetails = {
                     auth: arrayBufferToString(subscription.getKey("auth")),
@@ -126,17 +131,19 @@ function subscribe(event) {
                 }).then((response) => {
 
                     if(response.status !== 200) {
-                        deleteBrowserSubscription();
                         throw new Error(`Failed to subscribe to push notifications. Server failed to
                             record subscription. Please try again.`);
                     }
 
                     setMessage('ok', `Successfully subscribed to push notifications.`);
-                    loadCurrentSubscriptionDetails();
+
+                    loadCurrentSubscriptionDetails('client');
+
+                    resetSubscribeButton();
+
                     subscribeForm.classList.add('hidden');
-                    subscribeBtn.removeAttribute('disabled');
-                    subscribeBtn.value = "Subscribe";
                     unsubscribeForm.classList.remove('hidden');
+
                     return true;
 
                 });
@@ -146,41 +153,10 @@ function subscribe(event) {
         });
     }).catch(error => {
         setMessage('error', error.message);
-    });
-}
-
-
-function loadCurrentSubscriptionDetails() {
-
-    return navigator.serviceWorker.ready.then((registration) => {
-        return registration.pushManager.getSubscription();
-    }).then((subscription) => {
-
-        if(!subscription) throw new Error(`Unable to find push subscription`);
-
-        let authKey = arrayBufferToString(subscription.getKey('auth'));
-        let url = `${AZ_HTTP_FUNC_BASE_URL}/api/getSubscription/${authKey}`;
-
-        return fetch(url).then((response) => {
-            if(response.status !== 200) throw new Error(`Failed to retrieve subscription details`);
-
-            return response.json();
-        }).then((subscriptionDetails) => {
-            const { propertyNameOrNumber, street, postcode} = subscriptionDetails;
-
-            document.getElementById('currentSubPropertyNameOrNumber').innerText = propertyNameOrNumber;
-            document.getElementById('currentSubStreet').innerText = street;
-            document.getElementById('currentSubPostcode').innerText = postcode;
-
-            return true;
-        });
-
-    }).catch((error) => {
-        setMessage('error', error.message);
+        deleteBrowserSubscription();
+        resetSubscribeButton();
         return false;
     });
-
-    
 }
 
 
@@ -204,36 +180,89 @@ function validateSubscribeForm() {
 }
 
 
+function resetSubscribeButton() {
+    subscribeBtn.removeAttribute('disabled');
+    subscribeBtn.value = "Subscribe";
+}
+
+
+function loadCurrentSubscriptionDetails(populateFrom = 'server') {
+
+    let { subscription } = window;
+
+    if(!subscription) throw new Error(`Unable to find push subscription`);
+
+    // For newly created subscriptions just display the details from the client to avoid a network call
+    if(populateFrom === 'client') {
+        return displayCurrentSubscriptionDetails(
+            document.getElementById('propertyNameOrNumber').value,
+            document.getElementById('street').value,
+            document.getElementById('postcode').value,
+        );
+    } 
+    
+    // Otherwise fetch the subscription details from the server
+    else {
+        let authKey = arrayBufferToString(subscription.getKey('auth'));
+        let url = `${AZ_HTTP_FUNC_BASE_URL}/api/getSubscription/${authKey}`;
+
+        return fetch(url).then((response) => {
+    
+            if(response.status !== 200) throw new Error(`Failed to retrieve subscription details`);
+    
+            return response.json();
+
+        }).then((subscriptionDetails) => {
+            
+            return displayCurrentSubscriptionDetails(
+                subscriptionDetails.propertyNameOrNumber,
+                subscriptionDetails.street,
+                subscriptionDetails.postcode
+            );
+    
+        }).catch((error) => {
+            setMessage('error', error.message);
+            return false;
+        });
+    }
+}
+
+
+function displayCurrentSubscriptionDetails(propertyNameOrNumber, street, postcode) {
+    document.getElementById('currentSubPropertyNameOrNumber').innerText = propertyNameOrNumber;
+    document.getElementById('currentSubStreet').innerText = street;
+    document.getElementById('currentSubPostcode').innerText = postcode;
+    return true;
+}
+
+
 function deleteServerSubscription() {
     return true; //TODO: 
 }
 
 
 function deleteBrowserSubscription() {
+    
+    let { subscription } = window;
 
-    return navigator.serviceWorker.ready.then((registration) => {
-        return registration.pushManager.getSubscription();
-    }).then((subscription) => {
+    if(!subscription) {
+        unsubscribeForm.classList.add('hidden');
+        subscribeForm.classList.remove('hidden');
+        throw new Error('No push subscription to unsubscribe from.');
+    }
 
-        if(!subscription) {
-            unsubscribeForm.classList.add('hidden');
-            subscribeForm.classList.remove('hidden');
-            throw new Error('No push subscription to unsubscribe from.');
+    return subscription.unsubscribe().then((success) => {
+
+        if(!success) {
+            throw new Error(`Failed to unsubscribe from push notifications. Browser error. 
+                Please try again.`);
         }
 
-        subscription.unsubscribe().then((success) => {
-            if(!success) {
-                throw new Error(`Failed to unsubscribe from push notifications. Browser error. 
-                    Please try again.`);
-            }
+        unsubscribeForm.classList.add('hidden');
+        subscribeForm.classList.remove('hidden');
+        resetSubscribeButton();
 
-            unsubscribeForm.classList.add('hidden');
-            subscribeForm.classList.remove('hidden');
-            subscribeBtn.removeAttribute('disabled');
-            subscribeBtn.value = "Subscribe";
-
-            return true;
-        });
+        return true;
 
     }).catch((error) => {
         setMessage('error', error.message);
@@ -274,7 +303,7 @@ function unsubscribe(event) {
 }
 
 
-/* iOS user hint messaging */
+/* Utils: iOS user hint messaging */
 function iOS() {
     return [
       'iPad Simulator',
@@ -292,7 +321,7 @@ if(iOS()) {
     document.body.classList.add('ios');
 }
 
-/* Utility to convert push keys to strings */
+/* Utils: Convery PushSubscription keys to strings */
 function arrayBufferToString(buffer) {
     var binary = '';
     var bytes = new Uint8Array(buffer);
