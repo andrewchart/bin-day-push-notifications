@@ -165,7 +165,7 @@ function loadCurrentSubscriptionDetails(populateFrom = 'server') {
 
     let { subscription } = window;
 
-    if(!subscription) throw new Error(`Unable to find push subscription`);
+    if(!subscription) throw new Error(`Unable to find push subscription.`);
 
     // For newly created subscriptions just display the details from the client to avoid a network call
     if(populateFrom === 'client') {
@@ -212,7 +212,29 @@ function displayCurrentSubscriptionDetails(propertyNameOrNumber, street, postcod
 
 
 function deleteServerSubscription() {
-    return true; //TODO: 
+
+    let { subscription } = window;
+
+    if(!subscription) throw new Error(`Unable to find push subscription.`);
+
+    let authKey = encodeURIComponent(arrayBufferToString(subscription.getKey('auth')));
+
+    return fetch(`${AZ_HTTP_FUNC_BASE_URL}/api/deleteSubscription/${authKey}`, { 
+        method: 'delete'
+    }).then((response) => {
+
+        if(response.status !== 200) {
+            throw new Error(`Failed to delete push subscription. Server failed to delete subscription. 
+                Please try again.`);
+        }
+
+        return true;
+
+    }).catch((error) => {
+        setMessage('error', error.message);
+        return false;
+    });
+
 }
 
 

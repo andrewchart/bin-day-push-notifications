@@ -85,12 +85,49 @@ app.http('getSubscription', {
             response.status = 200;
             response.body = JSON.stringify(result);
         }).catch((error) => {
-            console.log(error.message);
             response.status = error.statusCode;
             response.body = JSON.stringify({ message: 'Failed' });
         });
 
         return response;
 
+    }
+});
+
+
+app.http('deleteSubscription', {
+    methods: ['DELETE'],
+    authLevel: 'anonymous',
+    route: 'deleteSubscription/{authKey}',
+    handler: async (request, context) => {
+
+        let response = {
+            body: JSON.stringify({ message: 'Deleted' }),
+            status: 200
+        }
+
+        const {
+            AZ_ACCOUNT_NAME,
+            AZ_ACCOUNT_KEY,
+            AZ_TABLE_STORAGE_URL,
+            AZ_SUBSCRIPTIONS_TABLE_NAME
+        } = process.env;
+
+        const { authKey } = request.params;
+
+        const partitionKey = 'subscriptions';
+
+        const rowKey = encodeURIComponent(decodeURIComponent(authKey));
+
+        const creds = new AzureNamedKeyCredential(AZ_ACCOUNT_NAME, AZ_ACCOUNT_KEY);
+        const client = new TableClient(AZ_TABLE_STORAGE_URL, AZ_SUBSCRIPTIONS_TABLE_NAME, creds);
+
+        await client.deleteEntity(partitionKey, rowKey).catch((error) => {
+            response.body = JSON.stringify({ message: 'Failed' });
+            response.status = error.statusCode;
+        });
+        
+        return response;
+        
     }
 });
