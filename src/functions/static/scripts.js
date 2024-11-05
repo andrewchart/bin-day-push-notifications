@@ -237,6 +237,8 @@ function deleteBrowserSubscription() {
         subscribeForm.classList.remove('hidden');
         resetSubscribeButton();
 
+        delete window.subscription;
+
         return true;
 
     }).catch((error) => {
