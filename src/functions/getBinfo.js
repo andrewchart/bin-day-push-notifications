@@ -8,7 +8,8 @@ app.timer('getBinfo', {
 
         const { 
             START_URL,
-            FORM_PAGE_LINK_TEXT
+            FORM_PAGE_LINK_TEXT,
+            AZ_HTTP_FUNC_BASE_URL
         } = process.env;
 
         const addresses = await getAddresses();
@@ -41,11 +42,18 @@ app.timer('getBinfo', {
                 page.waitForNavigation
             ]);
     
-            // Choose first address
-            await Promise.all([
-                page.locator('#property_list a').click(),
-                page.waitForNavigation
-            ]);
+            // Choose first address if it exists, mark subscription invalid if not
+            try {
+                await Promise.all([
+                    page.locator('#property_list a').setTimeout(3000).click(),
+                    page.waitForNavigation
+                ]);
+            } catch(error) {
+                await fetch(`${AZ_HTTP_FUNC_BASE_URL}/api/markInvalidAddress/${rowKey}`, { 
+                    method: 'PATCH'
+                });
+                return false;
+            }
     
             // Parse data
             const container = '#scheduled-collections';

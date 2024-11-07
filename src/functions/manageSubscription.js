@@ -42,7 +42,8 @@ app.http('createSubscription', {
             endpoint,
             propertyNameOrNumber, 
             street, 
-            postcode
+            postcode,
+            validAddress: true
         }, "Replace").catch((error) => {
             response.body = JSON.stringify({ message: 'Failed' });
             response.status = 500;
