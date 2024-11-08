@@ -2,86 +2,109 @@ const { app } = require('@azure/functions');
 const { TableClient, AzureNamedKeyCredential } = require("@azure/data-tables");
 const puppeteer = require("puppeteer");
 
-app.timer('getBinfo', {
+app.timer('getBinfoSchedule', {
     schedule: '0 0 1 * * 1',
-    handler: async function(myTimer, context) {
-
-        const { 
-            START_URL,
-            FORM_PAGE_LINK_TEXT,
-            AZ_HTTP_FUNC_BASE_URL
-        } = process.env;
-
-        const addresses = await getAddresses();
-
-        // Loop through each subscription getting collection details for each address
-        addresses.forEach(async (address) => {
-
-            const browser = await puppeteer.launch();
-            const page = await browser.newPage();
-
-            const { rowKey, propertyNameOrNumber, street, postcode } = address;
-    
-            // Go to start page
-            await page.goto(START_URL);
-    
-            // Navigate to address form
-            await Promise.all([
-                page.locator(`a ::-p-text(${FORM_PAGE_LINK_TEXT})`).click(),
-                page.waitForNavigation
-            ]);
-    
-            // Fill in the form
-            await page.locator('#address_name_number').fill(propertyNameOrNumber);
-            await page.locator('#address_street').fill(street);
-            await page.locator('#address_postcode').fill(postcode);
-    
-            // Submit form
-            await Promise.all([
-                page.locator('#Submit').click(),
-                page.waitForNavigation
-            ]);
-    
-            // Choose first address if it exists, mark subscription invalid if not
-            try {
-                await Promise.all([
-                    page.locator('#property_list a').setTimeout(3000).click(),
-                    page.waitForNavigation
-                ]);
-            } catch(error) {
-                await fetch(`${AZ_HTTP_FUNC_BASE_URL}/api/markInvalidAddress/${rowKey}`, { 
-                    method: 'PATCH'
-                });
-                return false;
-            }
-    
-            // Parse data
-            const container = '#scheduled-collections';
-            await page.locator(container).waitHandle();
-    
-            const data = await page.$$eval(`${container} li`, data => 
-                data.filter(li => li.innerText !== '').map(li => {
-                    return li.innerText;
-                })
-            );
-    
-            const collections = [];
-    
-            for(i = 0; i < data.length; i = i+2) {
-                const collection = new Collection(rowKey, data[i], data[i+1]);
-                if (collection.isRecognisedCollectionType) {
-                    collections.push(collection);
-                }
-            }
-    
-            await writeCollections(collections);
-    
-            await browser.close(); 
-
-        });
-    
+    handler: async (myTimer, context) => {
+        return getBinfo();
     }
 });
+
+app.http('getBinfoSingle', {
+    methods: ['POST'],
+    authLevel: 'anonymous',
+    route: 'getBinfoSingle/{subscriptionRowKey}',
+    handler: async (request, context) => {
+        const { subscriptionRowKey }  = request.params;
+        return getBinfo(encodeURIComponent(decodeURIComponent(subscriptionRowKey)));
+    }    
+});
+
+
+async function getBinfo (subscriptionRowKey = null) {
+
+    const { 
+        START_URL,
+        FORM_PAGE_LINK_TEXT,
+        AZ_HTTP_FUNC_BASE_URL
+    } = process.env;
+
+    let response = {
+        body: JSON.stringify({ message: 'OK' }),
+        status: 200
+    }
+
+    addresses = await getAddresses(subscriptionRowKey);
+
+    // Loop through each subscription getting collection details for each address
+    addresses.forEach(async (address) => {
+
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+
+        const { rowKey, propertyNameOrNumber, street, postcode } = address;
+
+        // Go to start page
+        await page.goto(START_URL);
+
+        // Navigate to address form
+        await Promise.all([
+            page.locator(`a ::-p-text(${FORM_PAGE_LINK_TEXT})`).click(),
+            page.waitForNavigation
+        ]);
+
+        // Fill in the form
+        await page.locator('#address_name_number').fill(propertyNameOrNumber);
+        await page.locator('#address_street').fill(street);
+        await page.locator('#address_postcode').fill(postcode);
+
+        // Submit form
+        await Promise.all([
+            page.locator('#Submit').click(),
+            page.waitForNavigation
+        ]);
+
+        // Choose first address if it exists, mark subscription invalid if not
+        try {
+            await Promise.all([
+                page.locator('#property_list a').setTimeout(3000).click(),
+                page.waitForNavigation
+            ]);
+        } catch(error) {
+            await fetch(`${AZ_HTTP_FUNC_BASE_URL}/api/markInvalidAddress/${rowKey}`, { 
+                method: 'PATCH'
+            });
+            return false;
+        }
+
+        // Parse data
+        const container = '#scheduled-collections';
+        await page.locator(container).waitHandle();
+
+        const data = await page.$$eval(`${container} li`, data => 
+            data.filter(li => li.innerText !== '').map(li => {
+                return li.innerText;
+            })
+        );
+
+        const collections = [];
+
+        for(i = 0; i < data.length; i = i+2) {
+            const collection = new Collection(rowKey, data[i], data[i+1]);
+            if (collection.isRecognisedCollectionType) {
+                delete collection.isRecognisedCollectionType;
+                collections.push(collection);
+            }
+        }
+
+        await writeCollections(collections);
+
+        await browser.close(); 
+
+    });
+
+    return response;
+
+}
 
 
 function Collection(subscriptionRowKey, dateString, description) {
@@ -161,7 +184,8 @@ function Collection(subscriptionRowKey, dateString, description) {
 }
 
 
-async function getAddresses() {
+async function getAddresses(subscriptionRowKey = null) {
+
     const {
         AZ_ACCOUNT_NAME,
         AZ_ACCOUNT_KEY,
@@ -173,8 +197,16 @@ async function getAddresses() {
 
     const creds = new AzureNamedKeyCredential(AZ_ACCOUNT_NAME, AZ_ACCOUNT_KEY);
     const client = new TableClient(AZ_TABLE_STORAGE_URL, AZ_SUBSCRIPTIONS_TABLE_NAME, creds);
+
+    let query;
+
+    if(subscriptionRowKey) query = {
+        queryOptions: {
+            filter: `RowKey eq '${subscriptionRowKey}'`
+        }
+    }
     
-    let subscriptions = client.listEntities();
+    let subscriptions = await client.listEntities(query);
 
     for await (const subscription of subscriptions) {
         addresses.push({ 
