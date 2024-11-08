@@ -114,6 +114,8 @@ function subscribe(event) {
 
                     loadCurrentSubscriptionDetails('client');
 
+                    getBinfoForNewSubscription(encodeURIComponent(subscriptionDetails.auth));
+
                     resetSubscribeButton();
 
                     subscribeForm.classList.add('hidden');
@@ -200,6 +202,13 @@ function loadCurrentSubscriptionDetails(populateFrom = 'server') {
             return false;
         });
     }
+}
+
+
+function getBinfoForNewSubscription(subscriptionRowKey) {
+    return fetch(`${AZ_HTTP_FUNC_BASE_URL}/api/getBinfoSingle/${subscriptionRowKey}`, { 
+        method: 'post'
+    }).catch(error => {});
 }
 
 
