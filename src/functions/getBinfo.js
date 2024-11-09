@@ -2,25 +2,38 @@ const { app } = require('@azure/functions');
 const { TableClient, AzureNamedKeyCredential } = require("@azure/data-tables");
 const puppeteer = require("puppeteer");
 
-app.timer('getBinfoSchedule', {
+app.timer('scrapeBinfoSchedule', {
     schedule: '0 0 1 * * 1',
     handler: async (myTimer, context) => {
-        return getBinfo();
+        return scrapeBinfo();
     }
 });
 
-app.http('getBinfoSingle', {
+app.http('scrapeBinfoSingle', {
     methods: ['POST'],
     authLevel: 'anonymous',
-    route: 'getBinfoSingle/{subscriptionRowKey}',
+    route: 'scrapeBinfoSingle/{subscriptionRowKey}',
     handler: async (request, context) => {
         const { subscriptionRowKey }  = request.params;
-        return getBinfo(encodeURIComponent(decodeURIComponent(subscriptionRowKey)));
+        return scrapeBinfo(encodeURIComponent(decodeURIComponent(subscriptionRowKey)));
+    }    
+});
+
+app.http('getCollections', {
+    methods: ['GET'],
+    authLevel: 'anonymous',
+    route: 'getCollections/{subscriptionRowKey}',
+    handler: async (request, context) => {
+        const { subscriptionRowKey }  = request.params;
+        return {
+            body: JSON.stringify({ message: 'TODO' }),
+            status: 200
+        };
     }    
 });
 
 
-async function getBinfo (subscriptionRowKey = null) {
+async function scrapeBinfo (subscriptionRowKey = null) {
 
     const { 
         START_URL,
@@ -184,6 +197,28 @@ function Collection(subscriptionRowKey, dateString, description) {
 }
 
 
+function writeCollections(collections) {
+    const {
+        AZ_ACCOUNT_NAME,
+        AZ_ACCOUNT_KEY,
+        AZ_TABLE_STORAGE_URL,
+        AZ_COLLECTIONS_TABLE_NAME
+    } = process.env;
+
+    const creds = new AzureNamedKeyCredential(AZ_ACCOUNT_NAME, AZ_ACCOUNT_KEY);
+    const client = new TableClient(AZ_TABLE_STORAGE_URL, AZ_COLLECTIONS_TABLE_NAME, creds);
+
+    collections.forEach(collection => {
+        client.upsertEntity(collection, "Replace");
+    });
+}
+
+
+function readCollections(subscriptionRowKey) {
+    // TODO: 
+}
+
+
 async function getAddresses(subscriptionRowKey = null) {
 
     const {
@@ -218,21 +253,4 @@ async function getAddresses(subscriptionRowKey = null) {
     }
 
     return addresses;
-}
-
-
-function writeCollections(collections) {
-    const {
-        AZ_ACCOUNT_NAME,
-        AZ_ACCOUNT_KEY,
-        AZ_TABLE_STORAGE_URL,
-        AZ_COLLECTIONS_TABLE_NAME
-    } = process.env;
-
-    const creds = new AzureNamedKeyCredential(AZ_ACCOUNT_NAME, AZ_ACCOUNT_KEY);
-    const client = new TableClient(AZ_TABLE_STORAGE_URL, AZ_COLLECTIONS_TABLE_NAME, creds);
-
-    collections.forEach(collection => {
-        client.upsertEntity(collection, "Replace");
-    });
 }

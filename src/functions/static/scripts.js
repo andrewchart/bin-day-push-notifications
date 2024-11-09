@@ -114,7 +114,7 @@ function subscribe(event) {
 
                     loadCurrentSubscriptionDetails('client');
 
-                    getBinfoForNewSubscription(encodeURIComponent(subscriptionDetails.auth));
+                    scrapeBinfoForNewSubscription(encodeURIComponent(subscriptionDetails.auth));
 
                     resetSubscribeButton();
 
@@ -205,8 +205,8 @@ function loadCurrentSubscriptionDetails(populateFrom = 'server') {
 }
 
 
-function getBinfoForNewSubscription(subscriptionRowKey) {
-    return fetch(`${AZ_HTTP_FUNC_BASE_URL}/api/getBinfoSingle/${subscriptionRowKey}`, { 
+function scrapeBinfoForNewSubscription(subscriptionRowKey) {
+    return fetch(`${AZ_HTTP_FUNC_BASE_URL}/api/scrapeBinfoSingle/${subscriptionRowKey}`, { 
         method: 'post'
     }).catch(error => {});
 }
