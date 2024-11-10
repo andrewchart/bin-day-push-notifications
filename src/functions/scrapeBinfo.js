@@ -22,13 +22,61 @@ app.http('scrapeBinfoSingle', {
 app.http('getCollections', {
     methods: ['GET'],
     authLevel: 'anonymous',
-    route: 'getCollections/{subscriptionRowKey}',
+    route: 'getCollections/{subscriptionRowKey?}',
     handler: async (request, context) => {
-        const { subscriptionRowKey }  = request.params;
-        return {
-            body: JSON.stringify({ message: 'TODO' }),
+        
+        let response = {
+            body: { 
+                message: 'OK',
+                collections: []
+            },
             status: 200
         };
+
+        const { subscriptionRowKey }  = request.params;
+
+        const {
+            AZ_ACCOUNT_NAME,
+            AZ_ACCOUNT_KEY,
+            AZ_TABLE_STORAGE_URL,
+            AZ_COLLECTIONS_TABLE_NAME
+        } = process.env;
+    
+        const creds = new AzureNamedKeyCredential(AZ_ACCOUNT_NAME, AZ_ACCOUNT_KEY);
+        const client = new TableClient(AZ_TABLE_STORAGE_URL, AZ_COLLECTIONS_TABLE_NAME, creds);
+    
+        if(!subscriptionRowKey || subscriptionRowKey.trim().length === 0) {
+            response.status = 400;
+            response.body.message = 'Bad Request';
+            response.body = JSON.stringify(response.body);
+            return response;
+        }
+
+        try {
+        
+            let results = await client.listEntities({
+                queryOptions: {
+                    filter: `PartitionKey eq '${encodeURIComponent(decodeURIComponent(subscriptionRowKey))}'`
+                }
+            });
+        
+            for await (const collection of results) {
+                response.body.collections.push(collection);
+            }
+    
+        } catch(error) {
+            response.status = error.statusCode;
+            response.body = { message: 'Failed', collections: [] };
+        }
+
+        if(response.body.collections.length === 0) {
+            response.status = 404;
+            response.body.message = 'No collection details found';
+        }
+    
+        response.body = JSON.stringify(response.body);
+
+        return response;
     }    
 });
 
@@ -211,11 +259,6 @@ function writeCollections(collections) {
     collections.forEach(collection => {
         client.upsertEntity(collection, "Replace");
     });
-}
-
-
-function readCollections(subscriptionRowKey) {
-    // TODO: 
 }
 
 
