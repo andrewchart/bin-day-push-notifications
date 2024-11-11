@@ -116,6 +116,16 @@ function subscribe(event) {
 
                     scrapeBinfoForNewSubscription(encodeURIComponent(subscriptionDetails.auth));
 
+                    document.getElementById('upcomingCollectionsMessage').innerHTML = `Currently 
+                        checking for upcoming collections... Please wait 30 seconds or 
+                        <a href="javascript:;" onclick="javascript:location.reload();">refresh</a> 
+                        the page.`;
+
+                    setTimeout(loadCollectionDetails.bind(
+                        null,
+                        encodeURIComponent(subscriptionDetails.auth)
+                    ), 30000);
+
                     resetSubscribeButton();
 
                     subscribeForm.classList.add('hidden');
@@ -190,6 +200,18 @@ function loadCurrentSubscriptionDetails(populateFrom = 'server') {
             return response.json();
 
         }).then((subscriptionDetails) => {
+
+            if(subscriptionDetails.validAddress) {
+                document.getElementById('upcomingCollectionsMessage').innerHTML = `Loading collection 
+                    details...`;
+
+                loadCollectionDetails(subscriptionDetails.rowKey);
+        
+            } else {
+                document.getElementById('upcomingCollectionsMessage').innerHTML = `No bin collection
+                    details were found for this address on the Woking Council website. This address
+                    may not be in the Woking collection area.`;
+            }
             
             return displayCurrentSubscriptionDetails(
                 subscriptionDetails.propertyNameOrNumber,
@@ -205,18 +227,83 @@ function loadCurrentSubscriptionDetails(populateFrom = 'server') {
 }
 
 
-function scrapeBinfoForNewSubscription(subscriptionRowKey) {
-    return fetch(`${AZ_HTTP_FUNC_BASE_URL}/api/scrapeBinfoSingle/${subscriptionRowKey}`, { 
-        method: 'post'
-    }).catch(error => {});
-}
-
-
 function displayCurrentSubscriptionDetails(propertyNameOrNumber, street, postcode) {
     document.getElementById('currentSubPropertyNameOrNumber').innerText = propertyNameOrNumber;
     document.getElementById('currentSubStreet').innerText = street;
     document.getElementById('currentSubPostcode').innerText = postcode;
     return true;
+}
+
+
+function loadCollectionDetails(subscriptionRowKey) {
+    return fetch(`${AZ_HTTP_FUNC_BASE_URL}/api/getCollections/${subscriptionRowKey}`)
+        .then(response => response.json())
+        .then((result) => {
+
+            const { collections } = result;
+
+            // At this point, the address is considered valid but no collections have been found OR
+            // more likely this is a new subscription and we haven't yet scraped Binfo, so we just 
+            // don't have collection data yet.
+            if(collections.length === 0) {
+                return document.getElementById('upcomingCollectionsMessage').innerHTML = `Currently 
+                    checking for upcoming collections... Please wait 30 seconds or 
+                    <a href="javascript:;" onclick="javascript:location.reload();">refresh</a> 
+                    the page.`;
+            }
+
+            return displayCollectionDetails(collections);
+
+        }).catch(error => {
+            console.log(error)
+            document.getElementById('upcomingCollectionsMessage').innerHTML = `An error has occurred.
+                Unable to retrieve collection data for this subscription.`;
+        });
+}
+
+
+function displayCollectionDetails(collections) {
+
+    let outputDays = {};
+
+    let html = '';
+
+    collections.forEach((collection) => {
+        let utcDate = new Date(Date.parse(collection.utcDate));
+
+        let dateAsKey = 'collday_' + [utcDate.getFullYear(), utcDate.getMonth() + 1, utcDate.getDate()].join('_');
+
+        let dateAsStr = new Intl.DateTimeFormat('en-GB', {
+            dateStyle: 'full'
+        }).format(utcDate);
+
+        if(!outputDays[dateAsKey]) {
+            outputDays[dateAsKey] = {};
+            outputDays[dateAsKey].collections = []
+        }
+
+        outputDays[dateAsKey].dateAsStr = dateAsStr;
+        outputDays[dateAsKey].collections.push(collection.description);
+    });
+
+    for (key in outputDays) {
+        let collectionDateHtml = '<h4>' + outputDays[key].dateAsStr + '</h4>';
+        let collectionListHtml = '<ul><li>' + outputDays[key].collections.join('</li><li>') + '</li></ul>';
+
+        html += collectionDateHtml + collectionListHtml;
+    }
+
+    document.getElementById('upcomingCollectionsMessage').innerHTML = '';
+    document.getElementById('upcomingCollections').innerHTML = html;
+
+    return true;
+}
+
+
+function scrapeBinfoForNewSubscription(subscriptionRowKey) {
+    return fetch(`${AZ_HTTP_FUNC_BASE_URL}/api/scrapeBinfoSingle/${subscriptionRowKey}`, { 
+        method: 'post'
+    }).catch(error => {});
 }
 
 
