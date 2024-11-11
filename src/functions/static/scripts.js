@@ -116,6 +116,8 @@ function subscribe(event) {
 
                     scrapeBinfoForNewSubscription(encodeURIComponent(subscriptionDetails.auth));
 
+                    document.getElementById('upcomingCollections').innerHTML = '';
+
                     document.getElementById('upcomingCollectionsMessage').innerHTML = `Currently 
                         checking for upcoming collections... Please wait 30 seconds or 
                         <a href="javascript:;" onclick="javascript:location.reload();">refresh</a> 
