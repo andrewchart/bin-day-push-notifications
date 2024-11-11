@@ -1,40 +1,117 @@
 const { app } = require('@azure/functions');
+const { TableClient, AzureNamedKeyCredential } = require("@azure/data-tables");
 const { NotificationHubsClient, createBrowserNotification } = require('@azure/notification-hubs');
 
 
 app.timer('sendNotifications', {
-    schedule: '0 0 1 * * 1',
+    schedule: '0 30 18 * * *',
     handler: async function(myTimer, context) {
 
-        const { 
-            AZ_NOTIFICATION_HUB_CONNECTION_STRING,
-            AZ_NOTIFICATION_HUB_NAME 
-        } = process.env;
-
-        const client = new NotificationHubsClient(AZ_NOTIFICATION_HUB_CONNECTION_STRING, AZ_NOTIFICATION_HUB_NAME);
-
-        let collections = [
-            '♻️ Recycling Bin',
-            '🪫 Electrical & Textiles',
-            '🥗 Food Bin'
-        ];
-
-        const notification = createBrowserNotification({
-            body: { 
-                title: "Collections tomorrow (3rd Nov)",
-                text: collections.join('\n')
-            } 
-        });
+        let now = new Date();
+        let tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getDate() + 9));
         
-        let result = await client.sendNotification(notification, {
-            deviceHandle: {
-                endpoint: "https://web.push.apple.com/QI3rZCJRINq2IG7gCW_qk9CIpQ0EVyO3QC0zU6IYcGX8Qnd8-ivRZY5dLUn78bnguLQk9oPobSbkVW8K95dnxWOyOa0G-qnwC0_fThVqIDrDPTnAVgihRJ3yG31hunte_CgNrHRQh6IcLSxcusDXos98JHK6DI37tmfBQuFgQ9Y", 
-                auth: "C6SO4qZC8nP7Lpvuk44TIg==",
-                p256dh: "BD0sRqmgxVOHPUx0ablaNF2bA1CeqCOjZNWbe4cC/ibnRUU2oA/BXLFOCbmeZbPbKcJKoTLgzxiyX7mLox2Cq3E="
+        const tomorrowsCollections = await loadCollectionsByDate(tomorrow);
+
+        let collectionsGroupedBySubscription = {};
+
+        tomorrowsCollections.forEach((collection) => {
+
+            if(!collectionsGroupedBySubscription[collection.partitionKey]) {
+                collectionsGroupedBySubscription[collection.partitionKey] = [];
             }
+
+            collectionsGroupedBySubscription[collection.partitionKey].push(collection);
+
         });
 
-        console.log(result);
+        for(key in collectionsGroupedBySubscription) {
+            sendNotification(key, collectionsGroupedBySubscription[key]);
+        }
         
     }
 });
+
+
+async function loadCollectionsByDate(date) {
+
+    const {
+        AZ_ACCOUNT_NAME,
+        AZ_ACCOUNT_KEY,
+        AZ_TABLE_STORAGE_URL,
+        AZ_COLLECTIONS_TABLE_NAME
+    } = process.env;
+
+    const creds = new AzureNamedKeyCredential(AZ_ACCOUNT_NAME, AZ_ACCOUNT_KEY);
+    const client = new TableClient(AZ_TABLE_STORAGE_URL, AZ_COLLECTIONS_TABLE_NAME, creds);
+
+    let collections = [];
+
+    let y = date.getUTCFullYear().toString();
+    let m = (date.getUTCMonth() + 1).toString().padStart(2, "0");
+    let d= (date.getUTCDate()).toString().padStart(2, "0");
+    
+    let results = await client.listEntities({
+        queryOptions: {
+            filter: `utcDate eq datetime'${y}-${m}-${d}T00:00:00.000'`
+        }
+    });
+
+    for await (const collection of results) {
+        collections.push(collection);
+    }
+
+    return collections;
+
+}
+
+
+async function sendNotification(subscriptionRowKey, collectionsGroup) {
+
+    const { 
+        AZ_NOTIFICATION_HUB_CONNECTION_STRING,
+        AZ_NOTIFICATION_HUB_NAME,
+        AZ_ACCOUNT_NAME,
+        AZ_ACCOUNT_KEY,
+        AZ_TABLE_STORAGE_URL,
+        AZ_SUBSCRIPTIONS_TABLE_NAME
+    } = process.env;
+
+    const creds = new AzureNamedKeyCredential(AZ_ACCOUNT_NAME, AZ_ACCOUNT_KEY);
+    const tableClient = new TableClient(AZ_TABLE_STORAGE_URL, AZ_SUBSCRIPTIONS_TABLE_NAME, creds);
+
+    let subscription = await tableClient.getEntity("subscriptions", subscriptionRowKey);
+    
+
+    const notificationClient = new NotificationHubsClient(AZ_NOTIFICATION_HUB_CONNECTION_STRING, AZ_NOTIFICATION_HUB_NAME);
+
+    let collections = collectionsGroup.map(collection => collection.description);
+
+    let collDate = new Intl.DateTimeFormat('en-GB', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short'
+    }).format(collectionsGroup[0].utcDate);
+    
+    let msgBody; 
+    
+    if(collections.length > 3) {
+        msgBody = collections.slice(0,2).join('\n') + '\n'
+        + `...and ${collections.length - 2} other collections`;
+    } else {
+        msgBody = collections.join('\n');
+    }
+    
+    const notification = createBrowserNotification({
+        body: { 
+            title: `Collections tomorrow (${collDate})`,
+            text: msgBody
+        } 
+    });
+
+    let { endpoint, auth, p256dh } = subscription;
+
+    return notificationClient.sendNotification(notification, {
+        deviceHandle: { endpoint, auth, p256dh }
+    });
+
+}
