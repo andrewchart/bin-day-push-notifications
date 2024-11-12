@@ -4,11 +4,11 @@ const { NotificationHubsClient, createBrowserNotification } = require('@azure/no
 
 
 app.timer('sendNotifications', {
-    schedule: '0 30 18 * * *',
+    schedule: '0 15 19 * * *',
     handler: async function(myTimer, context) {
 
         let now = new Date();
-        let tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getDate() + 9));
+        let tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getDate() + 1));
         
         const tomorrowsCollections = await loadCollectionsByDate(tomorrow);
 
