@@ -4,7 +4,7 @@ const { NotificationHubsClient, createBrowserNotification } = require('@azure/no
 
 
 app.timer('sendNotifications', {
-    schedule: '0 15 19 * * *',
+    schedule: '0 30 21 * * *',
     handler: async function(myTimer, context) {
 
         let now = new Date();
