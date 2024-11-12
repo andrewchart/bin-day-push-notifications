@@ -63,6 +63,8 @@ app.http('getSubscription', {
 
         const { authKey } = request.params;
 
+        context.log('managesubscription.js:66 authkey', authKey);
+
         let response = {
             body: null,
             status: null
@@ -81,6 +83,8 @@ app.http('getSubscription', {
         // erm... certain characters including "/" are url encoded in request params above. Without
         // the inner decode, you get double encoding and the query fails. 
         const query = encodeURIComponent(decodeURIComponent(authKey));
+
+        context.log('managesubscription.js:87 query', authKey);
 
         await client.getEntity("subscriptions", query).then((result) => {
             response.status = 200;

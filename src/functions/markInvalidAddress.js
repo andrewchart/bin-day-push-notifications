@@ -20,7 +20,11 @@ app.http('markInvalidAddress', {
             AZ_SUBSCRIPTIONS_TABLE_NAME
         } = process.env;
 
-        const { rowKey } = request.params; console.log(rowKey);
+        const { rowKey } = request.params;
+
+        context.log('markInvalidAddress.js:25 rowKey', rowKey);
+        context.log('markInvalidAddress.js:26 encodeURIComponent(rowKey)', encodeURIComponent(rowKey));
+
     
         const creds = new AzureNamedKeyCredential(AZ_ACCOUNT_NAME, AZ_ACCOUNT_KEY);
         const client = new TableClient(AZ_TABLE_STORAGE_URL, AZ_SUBSCRIPTIONS_TABLE_NAME, creds);
