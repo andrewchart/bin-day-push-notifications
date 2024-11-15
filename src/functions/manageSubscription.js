@@ -61,15 +61,19 @@ app.http('getSubscription', {
     route: 'getSubscription',
     handler: async (request, context) => {
 
-        const { subscriptionRowKey } = request.params;
-
-        context.log('managesubscription.js:66 subscriptionRowKey', subscriptionRowKey);
+        const { key } = request.params;
 
         let response = {
             body: null,
             status: null
         }
 
+        if(!key || key.trim().length === 0) {
+            response.status = 400;
+            response.body = JSON.stringify({ message: 'Bad request' });
+            return response;
+        } 
+        
         const {
             AZ_ACCOUNT_NAME,
             AZ_ACCOUNT_KEY,
@@ -82,9 +86,7 @@ app.http('getSubscription', {
         
         // erm... certain characters including "/" are url encoded in request params above. Without
         // the inner decode, you get double encoding and the query fails. 
-        const query = encodeURIComponent(decodeURIComponent(subscriptionRowKey));
-
-        context.log('managesubscription.js:87 query', subscriptionRowKey);
+        const query = encodeURIComponent(decodeURIComponent(key));
 
         await client.getEntity("subscriptions", query).then((result) => {
             response.status = 200;

@@ -75,7 +75,7 @@ function subscribe(event) {
             subscribeBtn.value = "Please wait...";
 
             //Fetch Vapid Key
-            let url = `${AZ_HTTP_FUNC_BASE_URL}/api/getvapidkey`;
+            let url = `${AZ_HTTP_FUNC_BASE_URL}/api/getVapidKey`;
             const vapidServerKey = await fetch(url).then(response => response.text());
 
             // Establish subscription in browser and server
@@ -192,8 +192,8 @@ function loadCurrentSubscriptionDetails(populateFrom = 'server') {
     
     // Otherwise fetch the subscription details from the server
     else {
-        let authKey = encodeURIComponent(arrayBufferToString(subscription.getKey('auth')));
-        let url = `${AZ_HTTP_FUNC_BASE_URL}/api/getSubscription/${authKey}`;
+        let key = encodeURIComponent(arrayBufferToString(subscription.getKey('auth')));
+        let url = `${AZ_HTTP_FUNC_BASE_URL}/api/getSubscription?key=${key}`;
 
         return fetch(url).then((response) => {
     
@@ -238,7 +238,7 @@ function displayCurrentSubscriptionDetails(propertyNameOrNumber, street, postcod
 
 
 function loadCollectionDetails(subscriptionRowKey) {
-    return fetch(`${AZ_HTTP_FUNC_BASE_URL}/api/getCollections/${subscriptionRowKey}`)
+    return fetch(`${AZ_HTTP_FUNC_BASE_URL}/api/getCollections?key=${subscriptionRowKey}`)
         .then(response => response.json())
         .then((result) => {
 

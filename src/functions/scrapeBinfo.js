@@ -22,7 +22,7 @@ app.http('scrapeBinfoSingle', {
 app.http('getCollections', {
     methods: ['GET'],
     authLevel: 'anonymous',
-    route: 'getCollections/{subscriptionRowKey?}',
+    route: 'getCollections',
     handler: async (request, context) => {
         
         let response = {
@@ -33,7 +33,7 @@ app.http('getCollections', {
             status: 200
         };
 
-        const { subscriptionRowKey }  = request.params;
+        const { key }  = request.params;
 
         const {
             AZ_ACCOUNT_NAME,
@@ -45,7 +45,7 @@ app.http('getCollections', {
         const creds = new AzureNamedKeyCredential(AZ_ACCOUNT_NAME, AZ_ACCOUNT_KEY);
         const client = new TableClient(AZ_TABLE_STORAGE_URL, AZ_COLLECTIONS_TABLE_NAME, creds);
     
-        if(!subscriptionRowKey || subscriptionRowKey.trim().length === 0) {
+        if(!key || key.trim().length === 0) {
             response.status = 400;
             response.body.message = 'Bad Request';
             response.body = JSON.stringify(response.body);
@@ -56,7 +56,7 @@ app.http('getCollections', {
         
             let results = await client.listEntities({
                 queryOptions: {
-                    filter: `PartitionKey eq '${encodeURIComponent(decodeURIComponent(subscriptionRowKey))}'`
+                    filter: `PartitionKey eq '${encodeURIComponent(decodeURIComponent(key))}'`
                 }
             });
         
@@ -94,7 +94,7 @@ async function scrapeBinfo (subscriptionRowKey = null) {
         status: 200
     }
 
-    addresses = await getAddresses(subscriptionRowKey);
+    const addresses = await getAddresses(subscriptionRowKey);
 
     // Loop through each subscription getting collection details for each address
     addresses.forEach(async (address) => {
