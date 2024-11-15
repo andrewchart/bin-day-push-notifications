@@ -5,13 +5,21 @@ const { TableClient, AzureNamedKeyCredential } = require("@azure/data-tables");
 app.http('markInvalidAddress', {
     methods: ['PATCH'],
     authLevel: 'anonymous',
-    route: 'markInvalidAddress/{rowKey}',
+    route: 'markInvalidAddress',
     handler: async (request, context) => {
+
+        let { key } = await request.json();
 
         let response = {
             body: JSON.stringify({ message: 'OK' }),
             status: 200
         }
+
+        if(!key || key.trim().length === 0) {
+            response.status = 400;
+            response.body = JSON.stringify({ message: 'Bad request' });
+            return response;
+        } 
 
         const {
             AZ_ACCOUNT_NAME,
@@ -19,22 +27,16 @@ app.http('markInvalidAddress', {
             AZ_TABLE_STORAGE_URL,
             AZ_SUBSCRIPTIONS_TABLE_NAME
         } = process.env;
-
-        const { rowKey } = request.params;
-
-        context.log('markInvalidAddress.js:25 rowKey', rowKey);
-        context.log('markInvalidAddress.js:26 encodeURIComponent(rowKey)', encodeURIComponent(rowKey));
-
     
         const creds = new AzureNamedKeyCredential(AZ_ACCOUNT_NAME, AZ_ACCOUNT_KEY);
         const client = new TableClient(AZ_TABLE_STORAGE_URL, AZ_SUBSCRIPTIONS_TABLE_NAME, creds);
     
         await client.updateEntity({ 
             partitionKey: 'subscriptions',
-            rowKey: encodeURIComponent(rowKey), 
+            rowKey: encodeURIComponent(key), 
             validAddress: false 
         }, "Merge").catch((error) => {
-            console.log(error);
+            context.log(error);
             response.body = JSON.stringify({ message: 'Failed' });
             response.status = error.statusCode;
         });

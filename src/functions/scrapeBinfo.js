@@ -12,10 +12,23 @@ app.timer('scrapeBinfoSchedule', {
 app.http('scrapeBinfoSingle', {
     methods: ['POST'],
     authLevel: 'anonymous',
-    route: 'scrapeBinfoSingle/{subscriptionRowKey}',
+    route: 'scrapeBinfoSingle',
     handler: async (request, context) => {
-        const { subscriptionRowKey }  = request.params;
-        return scrapeBinfo(encodeURIComponent(decodeURIComponent(subscriptionRowKey)));
+
+        let { key } = await request.json();
+
+        let response = {
+            body: null,
+            status: null
+        }
+
+        if(!key || key.trim().length === 0) {
+            response.status = 400;
+            response.body = JSON.stringify({ message: 'Bad request' });
+            return response;
+        } 
+        
+        return scrapeBinfo(encodeURIComponent(decodeURIComponent(key)));
     }    
 });
 
@@ -47,10 +60,9 @@ app.http('getCollections', {
     
         if(!key || key.trim().length === 0) {
             response.status = 400;
-            response.body.message = 'Bad Request';
-            response.body = JSON.stringify(response.body);
+            response.body = JSON.stringify({ message: 'Bad request' });
             return response;
-        }
+        } 
 
         try {
         
@@ -131,8 +143,9 @@ async function scrapeBinfo (subscriptionRowKey = null) {
                 page.waitForNavigation
             ]);
         } catch(error) {
-            await fetch(`${AZ_HTTP_FUNC_BASE_URL}/api/markInvalidAddress/${rowKey}`, { 
-                method: 'PATCH'
+            await fetch(`${AZ_HTTP_FUNC_BASE_URL}/api/markInvalidAddress`, { 
+                method: 'PATCH', 
+                body: JSON.stringify({ key: rowKey })
             });
             return false;
         }

@@ -303,8 +303,9 @@ function displayCollectionDetails(collections) {
 
 
 function scrapeBinfoForNewSubscription(subscriptionRowKey) {
-    return fetch(`${AZ_HTTP_FUNC_BASE_URL}/api/scrapeBinfoSingle/${subscriptionRowKey}`, { 
-        method: 'post'
+    return fetch(`${AZ_HTTP_FUNC_BASE_URL}/api/scrapeBinfoSingle`, { 
+        method: 'post',
+        body: JSON.stringify({ key: subscriptionRowKey })
     }).catch(error => {});
 }
 
@@ -315,10 +316,11 @@ function deleteServerSubscription() {
 
     if(!subscription) throw new Error(`Unable to find push subscription.`);
 
-    let authKey = encodeURIComponent(arrayBufferToString(subscription.getKey('auth')));
+    let subscriptionRowKey = encodeURIComponent(arrayBufferToString(subscription.getKey('auth')));
 
-    return fetch(`${AZ_HTTP_FUNC_BASE_URL}/api/deleteSubscription/${authKey}`, { 
-        method: 'delete'
+    return fetch(`${AZ_HTTP_FUNC_BASE_URL}/api/deleteSubscription`, { 
+        method: 'delete',
+        body: JSON.stringify({ key: subscriptionRowKey })
     }).then((response) => {
 
         if(response.status !== 200) {
