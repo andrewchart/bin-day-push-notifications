@@ -7,7 +7,7 @@ self.addEventListener('push', (event) => {
     fetch(pushReceivedUrl, { 
         method: 'patch',
         body: JSON.stringify({ key: subscriptionRowKey })
-    }).then(res => console.log('fetched', res)).catch(error => console.error('failedfetch', error));
+    }).catch(error => {});
 
     return event.waitUntil(self.registration.showNotification(msg.title, {
         body: msg.text,
