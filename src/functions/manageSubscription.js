@@ -125,17 +125,29 @@ app.http('deleteSubscription', {
             AZ_ACCOUNT_NAME,
             AZ_ACCOUNT_KEY,
             AZ_TABLE_STORAGE_URL,
-            AZ_SUBSCRIPTIONS_TABLE_NAME
+            AZ_SUBSCRIPTIONS_TABLE_NAME,
+            AZ_COLLECTIONS_TABLE_NAME
         } = process.env;
 
-        const partitionKey = 'subscriptions';
-
-        const rowKey = encodeURIComponent(decodeURIComponent(key));
+        const subscriptionKey = encodeURIComponent(decodeURIComponent(key));
 
         const creds = new AzureNamedKeyCredential(AZ_ACCOUNT_NAME, AZ_ACCOUNT_KEY);
-        const client = new TableClient(AZ_TABLE_STORAGE_URL, AZ_SUBSCRIPTIONS_TABLE_NAME, creds);
+        const subscriptionsClient = new TableClient(AZ_TABLE_STORAGE_URL, AZ_SUBSCRIPTIONS_TABLE_NAME, creds);
+        const collectionsClient = new TableClient(AZ_TABLE_STORAGE_URL, AZ_COLLECTIONS_TABLE_NAME, creds);
 
-        await client.deleteEntity(partitionKey, rowKey).catch((error) => {
+        await subscriptionsClient.deleteEntity('subscriptions', subscriptionKey).then(async () => {
+
+            let allCollections = await collectionsClient.listEntities({
+                queryOptions: {
+                    filter: `PartitionKey eq '${subscriptionKey}'`
+                }
+            });
+
+            for await (const collection of allCollections) {
+                collectionsClient.deleteEntity(subscriptionKey, collection.rowKey);
+            }
+
+        }).catch((error) => {
             response.body = JSON.stringify({ message: 'Failed' });
             response.status = error.statusCode;
         });
