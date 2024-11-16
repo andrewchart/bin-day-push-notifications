@@ -43,7 +43,9 @@ app.http('createSubscription', {
             propertyNameOrNumber, 
             street, 
             postcode,
-            validAddress: true
+            validAddress: true,
+            lastAttemptedPush: new Date(0),
+            lastClientAcknowledgement: new Date()
         }, "Replace").catch((error) => {
             response.body = JSON.stringify({ message: 'Failed' });
             response.status = 500;
@@ -155,4 +157,48 @@ app.http('deleteSubscription', {
         return response;
         
     }
+});
+
+
+app.http('pushReceived', {
+    methods: ['PATCH'],
+    authLevel: 'anonymous',
+    route: 'pushReceived',
+    handler: async (request, context) => {
+
+        let { key } = await request.json();
+
+        let response = {
+            body: JSON.stringify({ message: 'OK' }),
+            status: 200
+        }
+
+        if(!key || key.trim().length === 0) {
+            response.status = 400;
+            response.body = JSON.stringify({ message: 'Bad request' });
+            return response;
+        } 
+
+        const {
+            AZ_ACCOUNT_NAME,
+            AZ_ACCOUNT_KEY,
+            AZ_TABLE_STORAGE_URL,
+            AZ_SUBSCRIPTIONS_TABLE_NAME
+        } = process.env;
+    
+        const creds = new AzureNamedKeyCredential(AZ_ACCOUNT_NAME, AZ_ACCOUNT_KEY);
+        const client = new TableClient(AZ_TABLE_STORAGE_URL, AZ_SUBSCRIPTIONS_TABLE_NAME, creds);
+    
+        await client.updateEntity({ 
+            partitionKey: 'subscriptions',
+            rowKey: encodeURIComponent(decodeURIComponent(key)), 
+            lastClientAcknowledgement: new Date() 
+        }, "Merge").catch((error) => {
+            context.log(error);
+            response.body = JSON.stringify({ message: 'Failed' });
+            response.status = error.statusCode;
+        });
+
+        return response;
+    }    
 });

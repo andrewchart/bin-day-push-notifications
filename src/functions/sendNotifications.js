@@ -73,7 +73,8 @@ async function sendNotification(subscriptionRowKey, collectionsGroup) {
         AZ_ACCOUNT_NAME,
         AZ_ACCOUNT_KEY,
         AZ_TABLE_STORAGE_URL,
-        AZ_SUBSCRIPTIONS_TABLE_NAME
+        AZ_SUBSCRIPTIONS_TABLE_NAME,
+        AZ_HTTP_FUNC_BASE_URL
     } = process.env;
 
     const creds = new AzureNamedKeyCredential(AZ_ACCOUNT_NAME, AZ_ACCOUNT_KEY);
@@ -104,7 +105,11 @@ async function sendNotification(subscriptionRowKey, collectionsGroup) {
     const notification = createBrowserNotification({
         body: { 
             title: `Collections tomorrow (${collDate})`,
-            text: msgBody
+            text: msgBody,
+            data: {
+                subscriptionRowKey,
+                pushReceivedUrl: AZ_HTTP_FUNC_BASE_URL + '/api/pushReceived'
+            }
         } 
     });
 
@@ -112,6 +117,12 @@ async function sendNotification(subscriptionRowKey, collectionsGroup) {
 
     return notificationClient.sendNotification(notification, {
         deviceHandle: { endpoint, auth, p256dh }
+    }).then(() => {
+        tableClient.updateEntity({ 
+            partitionKey: 'subscriptions',
+            rowKey: subscriptionRowKey, 
+            lastAttemptedPush: new Date() 
+        }, "Merge");
     });
 
 }
