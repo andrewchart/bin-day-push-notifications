@@ -4,7 +4,7 @@ const { NotificationHubsClient, createBrowserNotification } = require('@azure/no
 
 
 app.timer('sendNotifications', {
-    schedule: '0 */12 21 * * *',
+    schedule: '0 */12 23 * * *',
     handler: async function(myTimer, context) {
 
         let now = new Date();
@@ -101,6 +101,8 @@ async function sendNotification(subscriptionRowKey, collectionsGroup) {
     } else {
         msgBody = collections.join('\n');
     }
+
+    let tag = collections[0].rowKey;
     
     const notification = createBrowserNotification({
         body: { 
@@ -108,7 +110,8 @@ async function sendNotification(subscriptionRowKey, collectionsGroup) {
             text: msgBody,
             data: {
                 subscriptionRowKey,
-                pushReceivedUrl: AZ_HTTP_FUNC_BASE_URL + '/api/pushReceived'
+                pushReceivedUrl: AZ_HTTP_FUNC_BASE_URL + '/api/pushReceived',
+                tag
             }
         } 
     });

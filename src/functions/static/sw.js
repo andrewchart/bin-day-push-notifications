@@ -2,7 +2,7 @@ self.addEventListener('push', (event) => {
 
     let msg = event.data.json();
 
-    const { subscriptionRowKey, pushReceivedUrl } = msg.data;
+    const { subscriptionRowKey, pushReceivedUrl, tag } = msg.data;
 
     fetch(pushReceivedUrl, { 
         method: 'patch',
@@ -11,7 +11,8 @@ self.addEventListener('push', (event) => {
 
     return event.waitUntil(self.registration.showNotification(msg.title, {
         body: msg.text,
-        icon: '192.png'
+        icon: '192.png',
+        tag
     }));
 
 });
