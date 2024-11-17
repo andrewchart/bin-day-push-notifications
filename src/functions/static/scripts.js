@@ -14,6 +14,8 @@ const userFeedbackMsg = document.getElementById('userFeedbackMsg');
 /* Runtime function */
 (function main() {
 
+    fetch(`${AZ_HTTP_FUNC_BASE_URL}/api/init`);
+
     if("serviceWorker" in navigator) {
         navigator.serviceWorker.register('sw.js');
     
