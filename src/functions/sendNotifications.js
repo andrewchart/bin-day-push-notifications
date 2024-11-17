@@ -85,6 +85,8 @@ async function sendNotification(subscriptionRowKey, collectionsGroup) {
 
     const notificationClient = new NotificationHubsClient(AZ_NOTIFICATION_HUB_CONNECTION_STRING, AZ_NOTIFICATION_HUB_NAME);
 
+    let tag = collectionsGroup[0].rowKey;
+
     let collections = collectionsGroup.map(collection => collection.description);
 
     let collDate = new Intl.DateTimeFormat('en-GB', {
@@ -101,8 +103,6 @@ async function sendNotification(subscriptionRowKey, collectionsGroup) {
     } else {
         msgBody = collections.join('\n');
     }
-
-    let tag = collections[0].rowKey;
     
     const notification = createBrowserNotification({
         body: { 
