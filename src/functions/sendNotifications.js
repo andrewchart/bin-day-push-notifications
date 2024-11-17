@@ -5,7 +5,7 @@ const { loadCollectionsByDate } = require('./loadCollections.js');
 
 
 app.timer('sendNotifications', {
-    schedule: '0 */6 13 * * *',
+    schedule: '0 30 18 * * *',
     handler: async function(myTimer, context) {
 
         let now = new Date();
