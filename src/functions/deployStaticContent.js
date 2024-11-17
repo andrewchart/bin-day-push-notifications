@@ -14,7 +14,8 @@ app.http('deployStaticContent', {
         const {
             AZ_BLOB_STORAGE_URL,
             AZ_BLOB_STORAGE_NAME,
-            AZ_HTTP_FUNC_BASE_URL
+            AZ_HTTP_FUNC_BASE_URL,
+            VAPID_SERVER_KEY
         } = process.env;
 
         const blobService = new BlobServiceClient(
@@ -25,7 +26,10 @@ app.http('deployStaticContent', {
         const container = blobService.getContainerClient(AZ_BLOB_STORAGE_NAME);
 
         // Create env.js to expose selected env vars to script
-        let jsString = `const AZ_HTTP_FUNC_BASE_URL = "${AZ_HTTP_FUNC_BASE_URL}";`;
+        let jsString = '';
+        jsString += `const AZ_HTTP_FUNC_BASE_URL = "${AZ_HTTP_FUNC_BASE_URL}";\n`;
+        jsString += `const VAPID_SERVER_KEY = "${VAPID_SERVER_KEY}";`;
+
         fs.writeFileSync(__dirname + '/static/env.js', jsString);
 
         // Loop through all files in the static directory and upload them

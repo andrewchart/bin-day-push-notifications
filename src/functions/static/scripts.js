@@ -74,14 +74,10 @@ function subscribe(event) {
             subscribeBtn.disabled = true;
             subscribeBtn.value = "Please wait...";
 
-            //Fetch Vapid Key
-            let url = `${AZ_HTTP_FUNC_BASE_URL}/api/getVapidKey`;
-            const vapidServerKey = await fetch(url).then(response => response.text());
-
             // Establish subscription in browser and server
             return registration.pushManager.subscribe({
                 userVisibleOnly: true,
-                applicationServerKey: vapidServerKey
+                applicationServerKey: VAPID_SERVER_KEY
             }).then((subscription) => {
 
                 if(!subscription) {
