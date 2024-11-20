@@ -270,6 +270,9 @@ function displayCollectionDetails(collections) {
 
     collections.forEach((collection) => {
         let utcDate = new Date(Date.parse(collection.utcDate));
+        let todayMidnight = new Date().setHours(0,0,0,0);
+
+        if(todayMidnight > utcDate) return false;
 
         let dateAsKey = 'collday_' + [utcDate.getFullYear(), utcDate.getMonth() + 1, utcDate.getDate()].join('_');
 
