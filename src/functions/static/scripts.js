@@ -270,7 +270,7 @@ function displayCollectionDetails(collections) {
 
     collections.forEach((collection) => {
         let utcDate = new Date(Date.parse(collection.utcDate));
-        let todayMidnight = new Date().setHours(0,0,0,0);
+        let todayMidnight = new Date().setUTCHours(0,0,0,0);
 
         if(todayMidnight > utcDate) return false;
 
