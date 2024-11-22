@@ -117,7 +117,7 @@ async function scrapeBinfo (subscriptionRowKey = null) {
         const { rowKey, propertyNameOrNumber, street, postcode } = address;
 
         // Go to start page
-        await page.goto(START_URL);
+        await page.goto(START_URL, { waitUntil: 'domcontentloaded' });
 
         // Navigate to address form
         await Promise.all([
