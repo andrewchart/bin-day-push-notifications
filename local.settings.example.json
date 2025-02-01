@@ -1,0 +1,26 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "DefaultEndpointsProtocol=https;AccountName=xxxxxxxxxxxxxxxx;AccountKey=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx;EndpointSuffix=core.windows.net",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsFeatureFlags": "EnableWorkerIndexing",
+    "START_URL": "https://asjwsw-wrpwokingmunicipal-live.whitespacews.com/#!",
+    "FORM_PAGE_LINK_TEXT": "View My Collections",
+    "AZ_ACCOUNT_NAME": "mystorageaccountname",
+    "AZ_ACCOUNT_KEY": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "AZ_BLOB_STORAGE_URL": "https://mystorageaccountname.blob.core.windows.net/",
+    "AZ_BLOB_STORAGE_NAME": "$web",
+    "AZ_HTTP_FUNC_BASE_URL": "http://localhost:7071",
+    "AZ_NOTIFICATION_HUB_CONNECTION_STRING": "Endpoint=sb://mynotificationhubname.servicebus.windows.net/;SharedAccessKeyName=DefaultFullSharedAccessSignature;SharedAccessKey=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "AZ_NOTIFICATION_HUB_NAME": "mynotificationhubname",
+    "AZ_COLLECTIONS_TABLE_NAME": "mycollectiondatatablename",
+    "AZ_SUBSCRIPTIONS_TABLE_NAME": "mysubscriptiontablename",
+    "AZ_TABLE_STORAGE_URL": "https://mystorageaccountname.table.core.windows.net/",
+    "VAPID_SERVER_KEY": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  },
+  "Host": {
+    "LocalHttpPort": 7071,
+    "CORS": "*",
+    "CORSCredentials": false
+  }
+}
