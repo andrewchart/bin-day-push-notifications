@@ -3,8 +3,11 @@ Get push notifications when it's time to put the bins out, telling you which bin
 collected the next day.
 
 > Collections tomorrow (Wed 20 Nov)
+
 > ♻️ Recycling Bin
+
 > 🪫 Electrical & Textiles
+
 > 🥗 Food Bin
 
 ## Overview 
@@ -55,7 +58,45 @@ _Specified in **local.settings.json** for local environment and **Function App >
 
 ## Application Details
 
-### How it works
+### How it works (application flow)
+When the app is deployed to Azure it copies the files in src/functions/static to the storage bucket 
+specified in `AZ_BLOB_STORAGE_NAME`. Users can then access the static website by visiting the url 
+specified when you set up the storage container to serve files over the web.
+
+A user is first asked to grant permission for the browser to send them push notifications. The 
+push subscription is created using the VAPID key provided by Azure Notification Hubs. When this 
+permission is granted, the user is prompted to enter their house name/number, street name and 
+postcode. 
+
+The user-entered details are sent to [manageSubscription.js](./src/functions/manageSubscription.js) 
+along with the push subscription details and stored in table storage (`AZ_SUBSCRIPTIONS_TABLE_NAME`).
+We use the authorization key from the browser push subscription object as a unique key in the table 
+to recall this user's subscription from table storage later.
+
+After a successful subscription the app attempts to run the scraper immediately for that address 
+only ([scrapeBinfoSingle()](./src/functions/scrapeBinfo.js)) to immediately harvest bin collection
+information for that address. The scraper (see below) stores information about the collection in the 
+table called `AZ_COLLECTIONS_TABLE_NAME`. 
+
+The Table's _Partition Key_ is the unique subscription ID in the subscriptions table, and the 
+_Row Key_ signifies the date and type of the collection. In combination each row is unique.
+
+(My council specifies all bin types that are eligible to be collected on a given date, so a 
+collection on 24th October 2024 for the "food bin" and the "black bin" would get two rows in the 
+table:  `2024_10_24_BLACK_BIN` and `2024_10_24_FOOD_BIN`. Whilst two users could have the same 
+collections on the same day, they would each have a different _Partition Key_ making the row 
+singularly recallable using the user's subscription ID.)
+
+After a delay the front end requests all collection details for this user's subscription and, 
+assuming the scraper successfully found collection information for this address, these are displayed 
+on the static site. Users who are already subscribed who revist the static site also see upcoming 
+collection information.
+
+### Scraper
+[scraper](./src/functions/scrapeBinfo.js)
+
+### Static Website
+
 
 
 ### File/Folder Structure
@@ -76,9 +117,6 @@ _The following describes the folder structure of this application:_
     ├── package.json
     ├── puppeteer.config.cjs            # Config to establish a Puppeteer cache in the working directory
     └── README.md
-
-
-### Static Website
 
 
 ### Questions
