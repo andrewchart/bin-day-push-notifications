@@ -77,3 +77,5 @@ jobs:
           slot-name: 'Production'
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
           
+      - name: Deploy static site
+        run: curl -X POST https://get-bin-day-woking.azurewebsites.net/api/deploystaticcontent
