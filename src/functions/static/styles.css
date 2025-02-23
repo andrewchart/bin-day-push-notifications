@@ -88,6 +88,13 @@ form input[type=submit]:disabled {
     padding-left: 1em;
 }
 
+#appVersion {
+    margin: 3em 0 2em;
+    font-size: 0.8em;
+    text-align: center;
+    color: #666;
+}
+
 /* Show user hint to install to home screen on iOS */
 #addToHomeScreenMsg {
     display: none;

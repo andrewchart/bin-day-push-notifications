@@ -44,6 +44,8 @@ const userFeedbackMsg = document.getElementById('userFeedbackMsg');
     } else {
         setMessage('error', `Your browser does not support push notifications. Please try another browser.`);
     }
+
+    document.getElementById('appVersion').innerHTML = `v${APP_VERSION}`;
     
 })();
 

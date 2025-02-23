@@ -16,7 +16,8 @@
     "AZ_COLLECTIONS_TABLE_NAME": "mycollectiondatatablename",
     "AZ_SUBSCRIPTIONS_TABLE_NAME": "mysubscriptiontablename",
     "AZ_TABLE_STORAGE_URL": "https://mystorageaccountname.table.core.windows.net/",
-    "VAPID_SERVER_KEY": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    "VAPID_SERVER_KEY": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "APP_VERSION": "1.0.0"
   },
   "Host": {
     "LocalHttpPort": 7071,

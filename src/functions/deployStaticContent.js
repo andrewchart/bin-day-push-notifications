@@ -15,7 +15,8 @@ app.http('deployStaticContent', {
             AZ_BLOB_STORAGE_URL,
             AZ_BLOB_STORAGE_NAME,
             AZ_HTTP_FUNC_BASE_URL,
-            VAPID_SERVER_KEY
+            VAPID_SERVER_KEY,
+            APP_VERSION
         } = process.env;
 
         const blobService = new BlobServiceClient(
@@ -28,7 +29,9 @@ app.http('deployStaticContent', {
         // Create env.js to expose selected env vars to script
         let jsString = '';
         jsString += `const AZ_HTTP_FUNC_BASE_URL = "${AZ_HTTP_FUNC_BASE_URL}";\n`;
-        jsString += `const VAPID_SERVER_KEY = "${VAPID_SERVER_KEY}";`;
+        jsString += `const VAPID_SERVER_KEY = "${VAPID_SERVER_KEY}";\n`;
+        jsString += `const APP_VERSION = "${APP_VERSION}";`;
+
 
         fs.writeFileSync(__dirname + '/static/env.js', jsString);
 
